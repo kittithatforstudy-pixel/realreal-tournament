@@ -102,12 +102,13 @@ realreal-tournament/
 │   │   ├── api/              # Backend endpoints
 │   │   │   ├── auth/
 │   │   │   │   ├── login/route.js
+│   │   │   │   ├── logout/route.js
 │   │   │   │   └── register/route.js
 │   │   │   ├── tournaments/
 │   │   │   │   ├── route.js                    # GET list, POST create
 │   │   │   │   ├── [id]/route.js               # GET/PUT/DELETE
 │   │   │   │   ├── [id]/register/route.js      # POST register + payment
-│   │   │   │   └── [id]/bracket/route.js       # POST generate bracket
+│   │   │   │   └── [id]/bracket/route.js       # POST generate, PUT result
 │   │   │   ├── payments/
 │   │   │   │   ├── pending/route.js            # GET pending payments
 │   │   │   │   └── [id]/approve/route.js       # PUT approve/reject
@@ -119,17 +120,13 @@ realreal-tournament/
 │   │   │
 │   │   ├── tournaments/
 │   │   │   ├── page.js                         # Browse list
-│   │   │   ├── [id]/page.js                    # Tournament detail
-│   │   │   └── [id]/register/page.js           # Register + payment
+│   │   │   └── [id]/page.js                    # Tournament detail + register
 │   │   │
 │   │   ├── admin/
-│   │   │   ├── layout.js                       # Sidebar layout
-│   │   │   ├── page.js                         # Dashboard
-│   │   │   ├── tournaments/page.js             # All tournaments
-│   │   │   ├── tournaments/new/page.js         # Create new
-│   │   │   ├── payments/page.js                # Approve slips
-│   │   │   ├── games/page.js                   # Manage games
-│   │   │   └── settings/page.js                # Branding settings
+│   │   │   └── page.js                         # Dashboard + manage all
+│   │   │
+│   │   ├── profile/
+│   │   │   └── page.js                         # User profile
 │   │   │
 │   │   ├── globals.css                         # Tailwind + Google Fonts
 │   │   ├── layout.js                           # Root layout
@@ -141,14 +138,10 @@ realreal-tournament/
 │       ├── bracket.js                          # Bracket generators
 │       └── discord.js                          # Discord webhook helpers
 │
-├── public/                                     # Static files
-├── .env.example                                # Template
-├── .gitignore
+├── .env.example
 ├── next.config.js
 ├── package.json
-├── postcss.config.js                           # tailwindcss + autoprefixer
-├── tailwind.config.js                          # Theme + fonts
-├── jsconfig.json                               # Path aliases
+├── tailwind.config.js
 └── README.md
 ```
 
@@ -181,241 +174,47 @@ UserRole:            PLAYER, ADMIN, SUPER_ADMIN
 
 ## 🌱 Seed Data (npm run db:seed)
 
-### Admin User
 - admin@realreal.gg / admin123 (SUPER_ADMIN)
-
-### 10 Games
-Valorant, RoV (Arena of Valor), PUBG Mobile, FIFA 26, Tekken 8, Street Fighter 6, League of Legends, Mobile Legends, Apex Legends, Free Fire
-
-### 3 Rules Templates
-- Valorant Standard
-- Fighting Game Standard
-- MOBA Standard
-
----
-
-## ✅ สิ่งที่ทำเสร็จแล้ว
-
-### Frontend Pages (User)
-- [x] Homepage `/`
-- [x] Tournament list `/tournaments` (filter by game/format/status)
-- [x] Tournament detail `/tournaments/[id]`
-- [x] Register + payment `/tournaments/[id]/register`
-- [x] Login `/auth/login`
-- [x] Register `/auth/register`
-
-### Admin Panel
-- [x] Dashboard `/admin` (stats + active tournaments + pending payments)
-- [x] Tournament list `/admin/tournaments`
-- [x] Create tournament `/admin/tournaments/new` (config ทุกอย่าง)
-- [x] Approve payments `/admin/payments`
-- [x] Manage games `/admin/games`
-- [x] Settings `/admin/settings`
-
-### Backend API (9 endpoints)
-- [x] Auth: login, register
-- [x] Tournaments: list, create, detail, update, delete, register, bracket
-- [x] Payments: pending list, approve/reject
-- [x] Games: list, create
-
-### Libraries
-- [x] `lib/auth.js` — JWT, bcrypt, requireAuth, requireAdmin
-- [x] `lib/db.js` — Prisma singleton
-- [x] `lib/bracket.js` — generateSingleElim, generateDoubleElim, advanceWinner
-- [x] `lib/discord.js` — DiscordWebhook class + notify helpers
-
-### Discord Webhook (Auto-notify)
-- [x] When player registers
-- [x] When payment slip submitted
-- [x] When match result entered
-- [x] When champion crowned
-
----
-
-## 🚧 ยังไม่ได้ทำ (TODO)
-
-### Frontend
-- [ ] Bracket viewer (graphical visualization)
-- [ ] Profile page
-- [ ] Team management page (invite members, etc.)
-- [ ] Check-in page (live)
-- [ ] Match score entry (admin)
-- [ ] Public results/leaderboard page
-
-### Backend
-- [ ] Image upload (currently base64 in localStorage — should use Cloudinary/Supabase Storage)
-- [ ] Email notifications (currently only Discord)
-- [ ] PlatformSettings API endpoint (settings page uses localStorage)
-- [ ] Refresh token rotation
-- [ ] Rate limiting on API routes
-
-### DevOps
-- [ ] Custom domain setup
-- [ ] Sentry/error tracking
-- [ ] Database backups (Supabase has built-in but only on paid)
-- [ ] Cron jobs for tournament status auto-update
-
-### UX
-- [ ] Mobile menu (hamburger)
-- [ ] Loading skeletons (currently just spinner)
-- [ ] Toast notifications instead of alert()
-- [ ] Tournament bracket drag-and-drop seeding
+- 10 Games: Valorant, RoV, PUBG, FIFA 26, Tekken 8, SF6, LoL, ML, Apex, Free Fire
+- 3 Rules Templates: Valorant Standard, Fighting Game Standard, MOBA Standard
 
 ---
 
 ## 🔧 Common Tasks
 
-### รัน locally
 ```bash
-npm install
-cp .env.example .env.local
-# แก้ DATABASE_URL ใน .env.local
-npx prisma db push
-npm run db:seed
-npm run dev
-# http://localhost:3000
+npm run dev          # http://localhost:3000
+npm run build        # prisma generate && next build
+npm run db:seed      # seed admin + games
+npm run db:push      # push schema to DB
+npx prisma studio    # GUI at http://localhost:5555
 ```
 
 ### Deploy
 ```bash
-# แค่ push ไป main → Vercel auto-deploy
-git add .
-git commit -m "Update: ..."
-git push
-```
-
-### Reset database (CAREFUL!)
-```bash
-npx prisma db push --force-reset
-npm run db:seed
-```
-
-### ดู database GUI
-```bash
-npx prisma studio
-# http://localhost:5555
-```
-
-### สร้าง migration ใหม่ (production)
-```bash
-npx prisma migrate dev --name describe_change
+git add . && git commit -m "Update: ..." && git push
+# Vercel auto-deploys on push to main
 ```
 
 ---
 
 ## 🎨 Design System
 
-### Colors (Tailwind)
-```
-Primary:    #3b82f6 (blue-500)
-Secondary:  #7c3aed (purple-600)
-Success:    #10b981 (emerald-500)
-Warning:    #f59e0b (amber-500)
-Danger:     #ef4444 (red-500)
-Dark text:  #111827 (gray-900)
-```
-
-### Theme
-- Light theme (bg #f5f7fa, card #ffffff)
-- Sidebar bg: #f8f9fa
-- Border: #e5e7eb
-
-### Custom CSS Classes (in globals.css)
-- `.btn-primary` — Primary button
-- `.btn-secondary` — Outline button
-- `.card` — White rounded card
-- `.input` — Form input
-- `.label` — Form label
-- `.badge` — Pill badge
-- `.badge-open` / `.badge-live` / `.badge-closed`
-- `.font-head` — Chakra Petch (headings)
-- `.font-body` — IBM Plex Sans Thai (body)
+Custom CSS classes in `globals.css`:
+- `.btn-primary` / `.btn-secondary` / `.btn-danger` / `.btn-success`
+- `.card` — white rounded box with border + shadow
+- `.input` / `.label` — form fields
+- `.badge` + `.badge-open` / `.badge-live` / `.badge-closed`
+- `font-head` — Chakra Petch, `font-body` — IBM Plex Sans Thai
 
 ---
 
-## 📜 Coding Conventions
+## 🐛 Known Issues
 
-### File Style
-- React: functional components only, hooks
-- API routes: async functions, return `Response.json()`
-- Prisma: use `db.js` singleton, never `new PrismaClient()` directly
-
-### Naming
-- Components: PascalCase (`TournamentCard.js`)
-- API routes: lowercase (`route.js`)
-- Helpers: camelCase
-- Database fields: camelCase in code, snake_case auto-mapped by Prisma
-
-### Auth Patterns
-```javascript
-// Protected route (any user)
-import { requireAuth } from '@/lib/auth'
-const user = await requireAuth(request)
-if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 })
-
-// Admin only
-import { requireAdmin } from '@/lib/auth'
-const admin = await requireAdmin(request)
-if (!admin) return Response.json({ error: 'Forbidden' }, { status: 403 })
-```
-
-### Error Handling
-- Always wrap API logic in try/catch
-- Return user-friendly messages in Thai
-- Log errors with `console.error`
-
----
-
-## 🐛 Known Issues / Quirks
-
-1. **Slip upload uses base64** — ควรเปลี่ยนเป็น Cloudinary หรือ Supabase Storage (large images กิน database)
-
-2. **Tailwind v3 not v4** — เคยลอง v4 แล้วเจอ build error → ใช้ v3.4 แทน
-
-3. **postinstall: prisma generate** — สำคัญ! Vercel ต้องการ ห้ามลบ
-
-4. **JWT_SECRET ใน production** — ตอนนี้ใช้ "tournament-secret-2024" → เปลี่ยนเป็น random 32+ chars
-
-5. **PlatformSettings API endpoint** — ยังไม่มี (settings page เก็บใน localStorage)
-
-6. **Mobile menu** — ยังไม่มี hamburger สำหรับ admin sidebar บน mobile
-
----
-
-## 💬 How to Talk to Claude Code
-
-### ตัวอย่างคำสั่งดี
-
-✅ **Specific:**
-- "เพิ่มหน้า bracket viewer ที่ /tournaments/[id]/bracket แสดงเป็น tree visualization"
-- "Fix bug: หน้า admin/payments approve แล้ว Discord ไม่ส่ง notification"
-- "เปลี่ยน font size ใน .btn-primary เป็น 14px"
-- "Refactor src/lib/bracket.js generateDoubleElimBracket — แยกเป็นฟังก์ชันย่อย"
-
-❌ **Vague (ผมจะถามกลับ):**
-- "ทำให้ดีขึ้น"
-- "เพิ่มฟีเจอร์"
-- "Fix bug" (bug ไหน?)
-
-### Workflow
-1. คุณบอกสิ่งที่อยากแก้
-2. ผมอ่านไฟล์ที่เกี่ยวข้อง (อย่ากระโดดแก้)
-3. ผมเสนอแผน → คุณ approve
-4. ผมแก้ + test ที่ทำได้ + commit
-5. Push → Vercel auto-deploy
-6. คุณตรวจสอบ production
-
----
-
-## 🔗 Quick Links
-
-| Resource | URL |
-|---|---|
-| Production site | https://realreal-tournament.vercel.app |
-| GitHub repo | https://github.com/kittithatforstudy-pixel/realreal-tournament |
-| Vercel dashboard | https://vercel.com/dashboard |
-| Supabase project | https://supabase.com/dashboard/project/osoqmehhznstuelouzcu |
-| Discord webhook | (ใน .env เท่านั้น — อย่า commit) |
+1. **Tailwind v3 not v4** — ใช้ v3.4 (v4 มี build error)
+2. **postinstall: prisma generate** — สำคัญสำหรับ Vercel ห้ามลบ
+3. **JWT_SECRET ใน production** — เปลี่ยนเป็น random 32+ chars
+4. **No /api/me endpoint** — profile page ยังไม่แสดง user data จริง
 
 ---
 
@@ -423,15 +222,8 @@ if (!admin) return Response.json({ error: 'Forbidden' }, { status: 403 })
 
 - GitHub: kittithatforstudy-pixel
 - Email: kittithatforstudy@gmail.com
-- ทำงานเป็น: ผู้จัดทัวร์เกม (ไม่ใช่ developer fulltime)
-- ภาษาที่ใช้คุย: ไทย (อังกฤษได้บ้าง)
-- ระดับ: Beginner (ไม่เคยใช้ Git/GitHub/CLI ก่อน — ใช้เป็นแล้วในโปรเจคนี้)
-
-**คำแนะนำ:**
-- อธิบายเรียบง่าย ใช้ภาษาไทยเป็นหลัก
-- ก่อนทำอะไรใหญ่ๆ ขอ confirm ก่อน
-- บอก step-by-step เวลาให้คำสั่ง terminal
-- ถ้าเจอ error อธิบายว่าเกิดอะไรขึ้น ก่อนแก้
+- ภาษาที่ใช้คุย: ไทย
+- ระดับ: Beginner — อธิบายให้เข้าใจง่าย บอก step-by-step
 
 ---
 

@@ -13,7 +13,7 @@ export default function AdminPage() {
 
   // Create tournament form
   const [showCreate, setShowCreate] = useState(false)
-  const [createForm, setCreateForm] = useState({ name: '', gameId: '', format: 'SINGLE_ELIM', maxParticipants: 16, entryFee: 0, teamMode: true, teamSize: 5 })
+  const [createForm, setCreateForm] = useState({ name: '', gameName: '', format: 'SINGLE_ELIM', maxParticipants: 16, entryFee: 0, teamMode: true, teamSize: 5 })
   const [createMsg, setCreateMsg] = useState('')
 
   useEffect(() => {
@@ -58,7 +58,7 @@ export default function AdminPage() {
       setCreateMsg('สร้างสำเร็จ!')
       setTournaments(prev => [data, ...prev])
       setShowCreate(false)
-      setCreateForm({ name: '', gameId: '', format: 'SINGLE_ELIM', maxParticipants: 16, entryFee: 0, teamMode: true, teamSize: 5 })
+      setCreateForm({ name: '', gameName: '', format: 'SINGLE_ELIM', maxParticipants: 16, entryFee: 0, teamMode: true, teamSize: 5 })
     }
   }
 
@@ -299,11 +299,19 @@ export default function AdminPage() {
                 <input className="input" required value={createForm.name} onChange={e => setCreateForm(f => ({ ...f, name: e.target.value }))} />
               </div>
               <div>
-                <label className="label">เกม *</label>
-                <select className="input" required value={createForm.gameId} onChange={e => setCreateForm(f => ({ ...f, gameId: e.target.value }))}>
-                  <option value="">เลือกเกม</option>
-                  {games.map(g => <option key={g.id} value={g.id}>{g.icon} {g.name}</option>)}
-                </select>
+                <label className="label">เกม * <span className="text-gray-400 font-normal">(พิมพ์ชื่อเกม เช่น Valorant, RoV, PUBG)</span></label>
+                <input
+                  type="text"
+                  className="input"
+                  required
+                  placeholder="ชื่อเกม..."
+                  value={createForm.gameName}
+                  onChange={e => setCreateForm(f => ({ ...f, gameName: e.target.value }))}
+                  list="game-suggestions"
+                />
+                <datalist id="game-suggestions">
+                  {games.map(g => <option key={g.id} value={g.name} />)}
+                </datalist>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>

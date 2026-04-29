@@ -39,9 +39,25 @@ export async function POST(request) {
     const user = await requireAdmin()
     const data = await request.json()
 
+    // Find or create game by name
+    const gameName = (data.gameName || '').trim()
+    if (!gameName) {
+      return NextResponse.json({ error: 'กรุณาระบุชื่อเกม' }, { status: 400 })
+    }
+    let game = await prisma.game.findFirst({
+      where: { name: { equals: gameName, mode: 'insensitive' } }
+    })
+    if (!game) {
+      game = await prisma.game.create({
+        data: { name: gameName, icon: '🎮', category: 'Other' }
+      })
+    }
+
+    const { gameName: _, ...rest } = data
     const tournament = await prisma.tournament.create({
       data: {
-        ...data,
+        ...rest,
+        gameId: game.id,
         createdById: user.userId,
         mapPool: data.mapPool || [],
         sponsorLogos: data.sponsorLogos || []

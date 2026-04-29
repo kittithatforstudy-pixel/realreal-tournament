@@ -31,8 +31,8 @@ export default function LoginPage() {
 
       router.push('/')
       router.refresh()
-    } catch {
-      setError('เกิดข้อผิดพลาด กรุณาลองใหม่')
+    } catch (err) {
+      setError('เกิดข้อผิดพลาด: ' + (err?.message || 'กรุณาลองใหม่'))
     } finally {
       setLoading(false)
     }

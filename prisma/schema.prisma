@@ -1,0 +1,331 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ═══════════════════════════════════════
+// Users & Auth
+// ═══════════════════════════════════════
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  username      String    @unique
+  passwordHash  String
+  displayName   String?
+  avatar        String?
+  phone         String?
+  role          Role      @default(PLAYER)
+  discordId     String?
+  lineId        String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  registrations   Registration[]
+  teamsAsLeader   Team[]           @relation("TeamLeader")
+  teamMembers     TeamMember[]
+  paymentsApproved Payment[]       @relation("ApprovedBy")
+  tournamentsCreated Tournament[]  @relation("CreatedBy")
+}
+
+enum Role {
+  PLAYER
+  ADMIN
+  SUPER_ADMIN
+}
+
+// ═══════════════════════════════════════
+// Games
+// ═══════════════════════════════════════
+model Game {
+  id            String    @id @default(cuid())
+  name          String    @unique
+  icon          String    @default("🎮")
+  category      String    @default("Other")
+  defaultTeamSize Int     @default(5)
+  supportedFormats String[] @default(["SINGLE_ELIM", "DOUBLE_ELIM"])
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+
+  tournaments   Tournament[]
+}
+
+// ═══════════════════════════════════════
+// Tournaments
+// ═══════════════════════════════════════
+model Tournament {
+  id              String    @id @default(cuid())
+  name            String
+  description     String?
+  banner          String?
+  gameId          String
+  game            Game      @relation(fields: [gameId], references: [id])
+
+  // Format
+  format          Format    @default(SINGLE_ELIM)
+  teamMode        Boolean   @default(true)
+  teamSize        Int       @default(5)
+  maxParticipants Int       @default(16)
+  bestOf          Int       @default(3)
+  bestOfFinal     Int       @default(5)
+  seedingType     SeedingType @default(RANDOM)
+  allowSubs       Boolean   @default(true)
+  maxSubs         Int       @default(2)
+
+  // Money
+  entryFee        Float     @default(0)
+  prizeFirst      Float     @default(0)
+  prizeSecond     Float     @default(0)
+  prizeThird      Float     @default(0)
+  prizeMVP        Float     @default(0)
+
+  // Payment channels
+  promptpayNumber String?
+  promptpayName   String?
+  promptpayQR     String?
+  bankAccount     String?
+  truewalletNumber String?
+
+  // Schedule
+  regOpenAt       DateTime?
+  regCloseAt      DateTime?
+  startsAt        DateTime?
+  endsAt          DateTime?
+  checkinMinutes  Int       @default(30)
+  dqMinutes       Int       @default(15)
+
+  // Rules
+  rules           String?   @db.Text
+  rulesTemplateId String?
+  mapPool         String[]  @default([])
+
+  // Notification channels
+  notifyEmail     Boolean   @default(true)
+  notifyWeb       Boolean   @default(true)
+  notifyLine      Boolean   @default(false)
+  notifyDiscord   Boolean   @default(false)
+  discordWebhook  String?
+
+  // Branding
+  colorPrimary    String    @default("#3b82f6")
+  colorSecondary  String    @default("#7c3aed")
+  discordLink     String?
+  lineLink        String?
+  streamLink      String?
+  sponsorLogos    String[]  @default([])
+
+  // Status
+  status          TournamentStatus @default(DRAFT)
+  createdById     String
+  createdBy       User      @relation("CreatedBy", fields: [createdById], references: [id])
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  registrations   Registration[]
+  teams           Team[]
+  matches         Match[]
+}
+
+enum Format {
+  SINGLE_ELIM
+  DOUBLE_ELIM
+  ROUND_ROBIN
+  SWISS
+  BATTLE_ROYALE
+  GROUP_PLAYOFF
+}
+
+enum SeedingType {
+  RANDOM
+  MANUAL
+  RANKING
+}
+
+enum TournamentStatus {
+  DRAFT
+  OPEN
+  CLOSED
+  LIVE
+  FINISHED
+  CANCELLED
+}
+
+// ═══════════════════════════════════════
+// Teams
+// ═══════════════════════════════════════
+model Team {
+  id            String    @id @default(cuid())
+  name          String
+  logo          String?
+  inviteCode    String    @unique @default(cuid())
+  tournamentId  String
+  tournament    Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  leaderId      String
+  leader        User      @relation("TeamLeader", fields: [leaderId], references: [id])
+  createdAt     DateTime  @default(now())
+
+  members       TeamMember[]
+  registrations Registration[]
+  matchesAsA    Match[]   @relation("MatchParticipantA")
+  matchesAsB    Match[]   @relation("MatchParticipantB")
+  matchesWon    Match[]   @relation("MatchWinner")
+}
+
+model TeamMember {
+  id        String   @id @default(cuid())
+  teamId    String
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  role      TeamRole @default(MEMBER)
+  joinedAt  DateTime @default(now())
+
+  @@unique([teamId, userId])
+}
+
+enum TeamRole {
+  LEADER
+  MEMBER
+  SUB
+}
+
+// ═══════════════════════════════════════
+// Registration & Payments
+// ═══════════════════════════════════════
+model Registration {
+  id            String    @id @default(cuid())
+  tournamentId  String
+  tournament    Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+  teamId        String?
+  team          Team?     @relation(fields: [teamId], references: [id])
+  status        RegStatus @default(PENDING)
+  checkedIn     Boolean   @default(false)
+  checkedInAt   DateTime?
+  createdAt     DateTime  @default(now())
+
+  payments      Payment[]
+
+  @@unique([tournamentId, userId])
+}
+
+enum RegStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  DQ
+}
+
+model Payment {
+  id              String    @id @default(cuid())
+  registrationId  String
+  registration    Registration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+  amount          Float
+  channel         PaymentChannel @default(PROMPTPAY)
+  slipUrl         String?
+  transferredAt   DateTime?
+  note            String?
+  status          PaymentStatus @default(PENDING)
+  approvedById    String?
+  approvedBy      User?     @relation("ApprovedBy", fields: [approvedById], references: [id])
+  approvedAt      DateTime?
+  rejectionReason String?
+  createdAt       DateTime  @default(now())
+}
+
+enum PaymentChannel {
+  PROMPTPAY
+  BANK_TRANSFER
+  TRUEWALLET
+  STRIPE
+  FREE
+}
+
+enum PaymentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// ═══════════════════════════════════════
+// Matches & Bracket
+// ═══════════════════════════════════════
+model Match {
+  id              String    @id @default(cuid())
+  tournamentId    String
+  tournament      Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  round           Int
+  matchNumber     Int
+  bracket         BracketType @default(UPPER)
+  participantAId  String?
+  participantA    Team?     @relation("MatchParticipantA", fields: [participantAId], references: [id])
+  participantBId  String?
+  participantB    Team?     @relation("MatchParticipantB", fields: [participantBId], references: [id])
+  scoreA          Int       @default(0)
+  scoreB          Int       @default(0)
+  winnerId        String?
+  winner          Team?     @relation("MatchWinner", fields: [winnerId], references: [id])
+  status          MatchStatus @default(PENDING)
+  scheduledAt     DateTime?
+  startedAt       DateTime?
+  finishedAt      DateTime?
+  nextMatchId     String?
+  createdAt       DateTime  @default(now())
+
+  @@unique([tournamentId, round, matchNumber, bracket])
+}
+
+enum BracketType {
+  UPPER
+  LOWER
+  GRAND_FINAL
+}
+
+enum MatchStatus {
+  PENDING
+  READY
+  LIVE
+  FINISHED
+  CANCELLED
+}
+
+// ═══════════════════════════════════════
+// Rules Templates
+// ═══════════════════════════════════════
+model RulesTemplate {
+  id        String   @id @default(cuid())
+  name      String
+  content   String   @db.Text
+  gameType  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ═══════════════════════════════════════
+// Platform Settings
+// ═══════════════════════════════════════
+model PlatformSettings {
+  id              String  @id @default("main")
+  platformName    String  @default("RealReal Tournament")
+  tagline         String  @default("จัดทัวร์นาเมนต์ยังไงก็ได้")
+  logoIcon        String  @default("⚡")
+  logoImage       String?
+  colorPrimary    String  @default("#3b82f6")
+  colorSecondary  String  @default("#7c3aed")
+  contactLine     String?
+  contactEmail    String?
+  website         String?
+  promptpayDefault String?
+  promptpayNameDefault String?
+  bankDefault     String?
+  truewalletDefault String?
+  discordWebhookDefault String?
+  language        String  @default("th")
+  customDomain    String?
+}

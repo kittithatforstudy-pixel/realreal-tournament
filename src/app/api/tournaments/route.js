@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server'
-import prisma from '@/lib/db'
-import { getCurrentUser, requireAdmin } from '@/lib/auth'
+import supabase from '@/lib/supabase'
+import { requireAdmin } from '@/lib/auth'
 
-// GET /api/tournaments — ดึงทัวร์ทั้งหมด (public)
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url)
@@ -10,66 +9,57 @@ export async function GET(request) {
     const gameId = searchParams.get('gameId')
     const format = searchParams.get('format')
 
-    const where = {}
-    if (status) where.status = status
-    if (gameId) where.gameId = gameId
-    if (format) where.format = format
-    // Don't show drafts to public
-    if (!status) where.status = { not: 'DRAFT' }
+    let query = supabase.from('Tournament').select('*, game:Game(*)').order('createdAt', { ascending: false })
+    if (status) query = query.eq('status', status)
+    else query = query.neq('status', 'DRAFT')
+    if (gameId) query = query.eq('gameId', gameId)
+    if (format) query = query.eq('format', format)
 
-    const tournaments = await prisma.tournament.findMany({
-      where,
-      include: {
-        game: true,
-        _count: { select: { registrations: true, teams: true } }
-      },
-      orderBy: { createdAt: 'desc' }
-    })
-
-    return NextResponse.json(tournaments)
+    const { data: tournaments, error } = await query
+    if (error) throw error
+    return NextResponse.json((tournaments || []).map(t => ({ ...t, _count: { registrations: 0, teams: 0 } })))
   } catch (error) {
     console.error('Get tournaments error:', error)
     return NextResponse.json({ error: 'เกิดข้อผิดพลาด' }, { status: 500 })
   }
 }
 
-// POST /api/tournaments — สร้างทัวร์ใหม่ (Admin only)
 export async function POST(request) {
   try {
     const user = await requireAdmin()
     const data = await request.json()
 
-    // Find or create game by name
     const gameName = (data.gameName || '').trim()
-    if (!gameName) {
-      return NextResponse.json({ error: 'กรุณาระบุชื่อเกม' }, { status: 400 })
-    }
-    let game = await prisma.game.findFirst({
-      where: { name: { equals: gameName, mode: 'insensitive' } }
-    })
+    if (!gameName) return NextResponse.json({ error: 'กรุณาระบุชื่อเกม' }, { status: 400 })
+
+    let { data: game } = await supabase.from('Game').select('id,name').ilike('name', gameName).maybeSingle()
     if (!game) {
-      game = await prisma.game.create({
-        data: { name: gameName, icon: '🎮', category: 'Other' }
-      })
+      const { data: newGame, error } = await supabase.from('Game').insert({
+        id: crypto.randomUUID(),
+        name: gameName, icon: '🎮', category: 'Other', defaultTeamSize: 5,
+        isActive: true, createdAt: new Date().toISOString()
+      }).select().single()
+      if (error) throw error
+      game = newGame
     }
 
     const { gameName: _, ...rest } = data
-    const tournament = await prisma.tournament.create({
-      data: {
-        ...rest,
-        gameId: game.id,
-        createdById: user.userId,
-        mapPool: data.mapPool || [],
-        sponsorLogos: data.sponsorLogos || []
-      },
-      include: { game: true }
-    })
+    const now = new Date().toISOString()
+    const { data: tournament, error } = await supabase.from('Tournament').insert({
+      id: crypto.randomUUID(),
+      ...rest,
+      gameId: game.id,
+      createdById: user.userId,
+      mapPool: data.mapPool || [],
+      sponsorLogos: data.sponsorLogos || [],
+      createdAt: now,
+      updatedAt: now
+    }).select('*, game:Game(*)').single()
+    if (error) throw error
 
     return NextResponse.json(tournament, { status: 201 })
   } catch (error) {
-    if (error.message === 'Forbidden') {
-      return NextResponse.json({ error: 'ไม่มีสิทธิ์' }, { status: 403 })
-    }
+    if (error.message === 'Forbidden') return NextResponse.json({ error: 'ไม่มีสิทธิ์' }, { status: 403 })
     console.error('Create tournament error:', error)
     return NextResponse.json({ error: 'สร้างทัวร์ไม่สำเร็จ' }, { status: 500 })
   }

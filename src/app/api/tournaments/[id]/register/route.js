@@ -1,88 +1,81 @@
 import { NextResponse } from 'next/server'
-import prisma from '@/lib/db'
+import supabase from '@/lib/supabase'
 import { requireAuth } from '@/lib/auth'
 import { getWebhook, notifyRegistration, notifyPayment } from '@/lib/discord'
 
-// POST /api/tournaments/[id]/register
 export async function POST(request, { params }) {
   try {
     const user = await requireAuth()
     const { id } = await params
-    const { teamName, teamMembers, slipUrl, amount, channel, transferredAt, note } = await request.json()
+    const { teamName, slipUrl, amount, channel, transferredAt, note } = await request.json()
 
-    const tournament = await prisma.tournament.findUnique({ where: { id } })
-    if (!tournament) {
-      return NextResponse.json({ error: 'ไม่พบทัวร์นาเมนต์' }, { status: 404 })
-    }
+    const { data: tournament } = await supabase.from('Tournament').select('*').eq('id', id).single()
+    if (!tournament) return NextResponse.json({ error: 'ไม่พบทัวร์นาเมนต์' }, { status: 404 })
+    if (tournament.status !== 'OPEN') return NextResponse.json({ error: 'ทัวร์นาเมนต์ยังไม่เปิดรับสมัคร' }, { status: 400 })
 
-    if (tournament.status !== 'OPEN') {
-      return NextResponse.json({ error: 'ทัวร์นาเมนต์ยังไม่เปิดรับสมัคร' }, { status: 400 })
-    }
-
-    // Check if already registered
-    const existing = await prisma.registration.findUnique({
-      where: { tournamentId_userId: { tournamentId: id, userId: user.userId } }
-    })
-    if (existing) {
-      return NextResponse.json({ error: 'คุณสมัครทัวร์นี้แล้ว' }, { status: 409 })
-    }
+    const { data: existing } = await supabase.from('Registration').select('id').eq('tournamentId', id).eq('userId', user.userId).maybeSingle()
+    if (existing) return NextResponse.json({ error: 'คุณสมัครทัวร์นี้แล้ว' }, { status: 409 })
 
     // Create team if team mode
     let team = null
     if (tournament.teamMode && teamName) {
-      team = await prisma.team.create({
-        data: {
-          name: teamName,
-          tournamentId: id,
-          leaderId: user.userId,
-          members: {
-            create: { userId: user.userId, role: 'LEADER' }
-          }
-        }
+      const { data: newTeam, error: teamError } = await supabase.from('Team').insert({
+        id: crypto.randomUUID(),
+        name: teamName,
+        tournamentId: id,
+        leaderId: user.userId,
+        inviteCode: Math.random().toString(36).slice(2, 10).toUpperCase(),
+        createdAt: new Date().toISOString()
+      }).select().single()
+      if (teamError) throw teamError
+      team = newTeam
+
+      await supabase.from('TeamMember').insert({
+        id: crypto.randomUUID(),
+        teamId: team.id,
+        userId: user.userId,
+        role: 'LEADER',
+        joinedAt: new Date().toISOString()
       })
     }
 
-    // Create registration
-    const registration = await prisma.registration.create({
-      data: {
-        tournamentId: id,
-        userId: user.userId,
-        teamId: team?.id,
-        status: tournament.entryFee > 0 ? 'PENDING' : 'CONFIRMED'
-      }
-    })
+    const { data: registration, error: regError } = await supabase.from('Registration').insert({
+      id: crypto.randomUUID(),
+      tournamentId: id,
+      userId: user.userId,
+      teamId: team?.id || null,
+      status: tournament.entryFee > 0 ? 'PENDING' : 'CONFIRMED',
+      checkedIn: false,
+      createdAt: new Date().toISOString()
+    }).select().single()
+    if (regError) throw regError
 
-    // Create payment if entry fee > 0
     if (tournament.entryFee > 0 && slipUrl) {
-      await prisma.payment.create({
-        data: {
-          registrationId: registration.id,
-          amount: amount || tournament.entryFee,
-          channel: channel || 'PROMPTPAY',
-          slipUrl,
-          transferredAt: transferredAt ? new Date(transferredAt) : new Date(),
-          note
-        }
+      await supabase.from('Payment').insert({
+        id: crypto.randomUUID(),
+        registrationId: registration.id,
+        amount: amount || tournament.entryFee,
+        channel: channel || 'PROMPTPAY',
+        slipUrl,
+        transferredAt: transferredAt ? new Date(transferredAt).toISOString() : new Date().toISOString(),
+        note: note || null,
+        status: 'PENDING',
+        createdAt: new Date().toISOString()
       })
     } else if (tournament.entryFee === 0) {
-      // Free tournament — auto confirm
-      await prisma.payment.create({
-        data: {
-          registrationId: registration.id,
-          amount: 0,
-          channel: 'FREE',
-          status: 'APPROVED'
-        }
+      await supabase.from('Payment').insert({
+        id: crypto.randomUUID(),
+        registrationId: registration.id,
+        amount: 0,
+        channel: 'FREE',
+        status: 'APPROVED',
+        createdAt: new Date().toISOString()
       })
     }
 
-    // Discord notification
     const webhook = getWebhook(tournament.discordWebhook)
     await notifyRegistration(webhook, user.username, tournament.name)
-
-    if (slipUrl) {
-      await notifyPayment(webhook, teamName || user.username, tournament.name, amount || tournament.entryFee)
-    }
+    if (slipUrl) await notifyPayment(webhook, teamName || user.username, tournament.name, amount || tournament.entryFee)
 
     return NextResponse.json({
       success: true,
@@ -90,11 +83,8 @@ export async function POST(request, { params }) {
       team: team?.id,
       inviteCode: team?.inviteCode
     }, { status: 201 })
-
   } catch (error) {
-    if (error.message === 'Unauthorized') {
-      return NextResponse.json({ error: 'กรุณาเข้าสู่ระบบ' }, { status: 401 })
-    }
+    if (error.message === 'Unauthorized') return NextResponse.json({ error: 'กรุณาเข้าสู่ระบบ' }, { status: 401 })
     console.error('Registration error:', error)
     return NextResponse.json({ error: 'สมัครไม่สำเร็จ' }, { status: 500 })
   }

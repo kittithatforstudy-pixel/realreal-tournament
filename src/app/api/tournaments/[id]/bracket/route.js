@@ -1,130 +1,95 @@
 import { NextResponse } from 'next/server'
-import prisma from '@/lib/db'
+import supabase from '@/lib/supabase'
 import { requireAdmin } from '@/lib/auth'
 import { generateSingleElimBracket, generateDoubleElimBracket, advanceWinner } from '@/lib/bracket'
 import { getWebhook, notifyMatchResult } from '@/lib/discord'
 
-// POST /api/tournaments/[id]/bracket — Generate bracket
 export async function POST(request, { params }) {
   try {
     await requireAdmin()
     const { id } = await params
 
-    const tournament = await prisma.tournament.findUnique({
-      where: { id },
-      include: {
-        teams: true,
-        registrations: { where: { status: 'CONFIRMED' }, include: { user: true } }
-      }
-    })
+    const [{ data: tournament }, { data: teams }, { data: registrations }] = await Promise.all([
+      supabase.from('Tournament').select('*').eq('id', id).single(),
+      supabase.from('Team').select('*').eq('tournamentId', id),
+      supabase.from('Registration').select('*, user:User(id, username)').eq('tournamentId', id).eq('status', 'CONFIRMED')
+    ])
 
-    if (!tournament) {
-      return NextResponse.json({ error: 'ไม่พบทัวร์' }, { status: 404 })
-    }
+    if (!tournament) return NextResponse.json({ error: 'ไม่พบทัวร์' }, { status: 404 })
 
-    // Delete existing matches
-    await prisma.match.deleteMany({ where: { tournamentId: id } })
+    await supabase.from('Match').delete().eq('tournamentId', id)
 
-    // Get participants
     const participants = tournament.teamMode
-      ? tournament.teams
-      : tournament.registrations.map(r => ({ id: r.userId, name: r.user.username }))
+      ? (teams || [])
+      : (registrations || []).map(r => ({ id: r.userId, name: r.user?.username || r.userId }))
 
-    if (participants.length < 2) {
-      return NextResponse.json({ error: 'ต้องมีผู้เข้าแข่งอย่างน้อย 2 คน/ทีม' }, { status: 400 })
-    }
+    if (participants.length < 2) return NextResponse.json({ error: 'ต้องมีผู้เข้าแข่งอย่างน้อย 2 คน/ทีม' }, { status: 400 })
 
-    // Generate matches
-    let matches
-    if (tournament.format === 'DOUBLE_ELIM') {
-      matches = generateDoubleElimBracket(participants, tournament.seedingType)
-    } else {
-      matches = generateSingleElimBracket(participants, tournament.seedingType)
-    }
+    const matches = tournament.format === 'DOUBLE_ELIM'
+      ? generateDoubleElimBracket(participants, tournament.seedingType)
+      : generateSingleElimBracket(participants, tournament.seedingType)
 
-    // Save to DB
-    const created = await prisma.$transaction(
-      matches.map(m => prisma.match.create({
-        data: {
-          tournamentId: id,
-          round: m.round,
-          matchNumber: m.matchNumber,
-          bracket: m.bracket,
-          participantAId: m.participantAId,
-          participantBId: m.participantBId,
-          winnerId: m.winnerId || null,
-          scoreA: m.scoreA || 0,
-          scoreB: m.scoreB || 0,
-          status: m.status
-        }
-      }))
-    )
+    const matchRows = matches.map(m => ({
+      id: crypto.randomUUID(),
+      tournamentId: id,
+      round: m.round,
+      matchNumber: m.matchNumber,
+      bracket: m.bracket,
+      participantAId: m.participantAId || null,
+      participantBId: m.participantBId || null,
+      winnerId: m.winnerId || null,
+      scoreA: m.scoreA || 0,
+      scoreB: m.scoreB || 0,
+      status: m.status,
+      createdAt: new Date().toISOString()
+    }))
 
-    // Update tournament status
-    await prisma.tournament.update({ where: { id }, data: { status: 'LIVE' } })
+    const { error } = await supabase.from('Match').insert(matchRows)
+    if (error) throw error
 
-    return NextResponse.json({ success: true, matchCount: created.length })
+    await supabase.from('Tournament').update({ status: 'LIVE', updatedAt: new Date().toISOString() }).eq('id', id)
+
+    return NextResponse.json({ success: true, matchCount: matchRows.length })
   } catch (error) {
     console.error('Generate bracket error:', error)
     return NextResponse.json({ error: 'สร้าง bracket ไม่สำเร็จ' }, { status: 500 })
   }
 }
 
-// PUT /api/tournaments/[id]/bracket — Update match result
 export async function PUT(request, { params }) {
   try {
     await requireAdmin()
     const { id } = await params
     const { matchId, scoreA, scoreB, winnerId } = await request.json()
 
-    const match = await prisma.match.update({
-      where: { id: matchId },
-      data: {
-        scoreA,
-        scoreB,
-        winnerId,
-        status: 'FINISHED',
-        finishedAt: new Date()
-      },
-      include: {
-        participantA: true,
-        participantB: true,
-        winner: true,
-        tournament: true
-      }
-    })
+    const now = new Date().toISOString()
+    const { data: match, error } = await supabase.from('Match')
+      .update({ scoreA, scoreB, winnerId, status: 'FINISHED', finishedAt: now })
+      .eq('id', matchId)
+      .select('*')
+      .single()
+    if (error) throw error
 
-    // Advance winner to next round
-    const allMatches = await prisma.match.findMany({
-      where: { tournamentId: id },
-      orderBy: [{ round: 'asc' }, { matchNumber: 'asc' }]
-    })
-
+    const { data: allMatches } = await supabase.from('Match').select('*').eq('tournamentId', id).order('round').order('matchNumber')
     const updated = advanceWinner(allMatches, match)
-
-    // Update next match in DB
     for (const m of updated) {
       if (m.id !== matchId) {
-        await prisma.match.update({
-          where: { id: m.id },
-          data: {
-            participantAId: m.participantAId,
-            participantBId: m.participantBId,
-            status: m.status
-          }
-        })
+        await supabase.from('Match').update({
+          participantAId: m.participantAId,
+          participantBId: m.participantBId,
+          status: m.status
+        }).eq('id', m.id)
       }
     }
 
-    // Discord notification
-    const webhook = getWebhook(match.tournament.discordWebhook)
-    await notifyMatchResult(
-      webhook,
-      match.tournament.name,
-      match.winner?.name || 'TBD',
-      match.winnerId === match.participantAId ? match.participantB?.name : match.participantA?.name,
-      `${scoreA} - ${scoreB}`
-    )
+    const { data: tournamentData } = await supabase.from('Tournament').select('name, discordWebhook').eq('id', id).single()
+    const [{ data: winnerTeam }, { data: loserTeam }] = await Promise.all([
+      winnerId ? supabase.from('Team').select('name').eq('id', winnerId).single() : Promise.resolve({ data: null }),
+      winnerId ? supabase.from('Team').select('name').eq('id', winnerId === match.participantAId ? match.participantBId : match.participantAId).single() : Promise.resolve({ data: null })
+    ])
+
+    const webhook = getWebhook(tournamentData?.discordWebhook)
+    await notifyMatchResult(webhook, tournamentData?.name, winnerTeam?.name || 'TBD', loserTeam?.name || 'TBD', `${scoreA} - ${scoreB}`)
 
     return NextResponse.json({ success: true, match })
   } catch (error) {

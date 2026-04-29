@@ -18,7 +18,9 @@
       "Bash(npx vercel *)",
       "Bash(DATABASE_URL=\"postgresql://postgres:3RYQAr0DYyL3K4No@db.osoqmehhznstuelouzcu.supabase.co:5432/postgres?sslmode=require\" npx prisma db push)",
       "Bash(DATABASE_URL=\"postgresql://postgres.osoqmehhznstuelouzcu:3RYQAr0DYyL3K4No@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres\" npx prisma db push)",
-      "Bash(curl *)"
+      "Bash(curl *)",
+      "WebFetch(domain:realreal-tournament.vercel.app)",
+      "Bash(node *)"
     ]
   }
 }

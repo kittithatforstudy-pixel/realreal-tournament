@@ -1,44 +1,28 @@
 import { NextResponse } from 'next/server'
-import prisma from '@/lib/db'
+import supabase from '@/lib/supabase'
 import { requireAdmin } from '@/lib/auth'
 
-// PUT /api/payments/[id]/approve
 export async function PUT(request, { params }) {
   try {
     const admin = await requireAdmin()
     const { id } = await params
     const { action, rejectionReason } = await request.json()
+    const now = new Date().toISOString()
 
     if (action === 'approve') {
-      const payment = await prisma.payment.update({
-        where: { id },
-        data: {
-          status: 'APPROVED',
-          approvedById: admin.userId,
-          approvedAt: new Date()
-        },
-        include: { registration: true }
-      })
-
-      // Auto-confirm registration
-      await prisma.registration.update({
-        where: { id: payment.registrationId },
-        data: { status: 'CONFIRMED' }
-      })
-
+      const { data: payment, error } = await supabase.from('Payment')
+        .update({ status: 'APPROVED', approvedById: admin.userId, approvedAt: now })
+        .eq('id', id).select().single()
+      if (error) throw error
+      await supabase.from('Registration').update({ status: 'CONFIRMED' }).eq('id', payment.registrationId)
       return NextResponse.json({ success: true, payment })
+    }
 
-    } else if (action === 'reject') {
-      const payment = await prisma.payment.update({
-        where: { id },
-        data: {
-          status: 'REJECTED',
-          rejectionReason: rejectionReason || 'ไม่ผ่านการตรวจสอบ',
-          approvedById: admin.userId,
-          approvedAt: new Date()
-        }
-      })
-
+    if (action === 'reject') {
+      const { data: payment, error } = await supabase.from('Payment')
+        .update({ status: 'REJECTED', rejectionReason: rejectionReason || 'ไม่ผ่านการตรวจสอบ', approvedById: admin.userId, approvedAt: now })
+        .eq('id', id).select().single()
+      if (error) throw error
       return NextResponse.json({ success: true, payment })
     }
 

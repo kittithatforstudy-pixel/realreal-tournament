@@ -1,81 +1,63 @@
 import { NextResponse } from 'next/server'
-import prisma from '@/lib/db'
+import supabase from '@/lib/supabase'
 import { requireAdmin } from '@/lib/auth'
 
-// GET /api/tournaments/[id]
 export async function GET(request, { params }) {
   try {
     const { id } = await params
 
-    const tournament = await prisma.tournament.findUnique({
-      where: { id },
-      include: {
-        game: true,
-        teams: {
-          include: {
-            leader: { select: { id: true, username: true, displayName: true } },
-            members: { include: { user: { select: { id: true, username: true, displayName: true } } } }
-          }
-        },
-        registrations: {
-          include: {
-            user: { select: { id: true, username: true, displayName: true } },
-            payments: true
-          }
-        },
-        matches: {
-          include: {
-            participantA: true,
-            participantB: true,
-            winner: true
-          },
-          orderBy: [{ round: 'asc' }, { matchNumber: 'asc' }]
-        },
-        _count: { select: { registrations: true, teams: true } }
-      }
+    const [{ data: tournament }, { data: teams }, { data: registrations }, { data: matches }] = await Promise.all([
+      supabase.from('Tournament').select('*, game:Game(*)').eq('id', id).single(),
+      supabase.from('Team').select('*, members:TeamMember(*, user:User(id, username, displayName))').eq('tournamentId', id),
+      supabase.from('Registration').select('*, user:User(id, username, displayName), payments:Payment(*)').eq('tournamentId', id),
+      supabase.from('Match').select('*').eq('tournamentId', id).order('round').order('matchNumber')
+    ])
+
+    if (!tournament) return NextResponse.json({ error: 'ไม่พบทัวร์นาเมนต์' }, { status: 404 })
+
+    // Enrich teams with leader info
+    const teamsWithLeaders = await Promise.all((teams || []).map(async team => {
+      const { data: leader } = await supabase.from('User').select('id, username, displayName').eq('id', team.leaderId).single()
+      return { ...team, leader }
+    }))
+
+    return NextResponse.json({
+      ...tournament,
+      teams: teamsWithLeaders,
+      registrations: registrations || [],
+      matches: matches || [],
+      _count: { registrations: (registrations || []).length, teams: (teams || []).length }
     })
-
-    if (!tournament) {
-      return NextResponse.json({ error: 'ไม่พบทัวร์นาเมนต์' }, { status: 404 })
-    }
-
-    return NextResponse.json(tournament)
   } catch (error) {
     console.error('Get tournament error:', error)
     return NextResponse.json({ error: 'เกิดข้อผิดพลาด' }, { status: 500 })
   }
 }
 
-// PUT /api/tournaments/[id]
 export async function PUT(request, { params }) {
   try {
     await requireAdmin()
     const { id } = await params
     const data = await request.json()
-
-    const tournament = await prisma.tournament.update({
-      where: { id },
-      data,
-      include: { game: true }
-    })
-
+    const { data: tournament, error } = await supabase.from('Tournament')
+      .update({ ...data, updatedAt: new Date().toISOString() })
+      .eq('id', id)
+      .select('*, game:Game(*)')
+      .single()
+    if (error) throw error
     return NextResponse.json(tournament)
   } catch (error) {
-    if (error.message === 'Forbidden') {
-      return NextResponse.json({ error: 'ไม่มีสิทธิ์' }, { status: 403 })
-    }
+    if (error.message === 'Forbidden') return NextResponse.json({ error: 'ไม่มีสิทธิ์' }, { status: 403 })
     return NextResponse.json({ error: 'อัปเดตไม่สำเร็จ' }, { status: 500 })
   }
 }
 
-// DELETE /api/tournaments/[id]
 export async function DELETE(request, { params }) {
   try {
     await requireAdmin()
     const { id } = await params
-
-    await prisma.tournament.delete({ where: { id } })
-
+    const { error } = await supabase.from('Tournament').delete().eq('id', id)
+    if (error) throw error
     return NextResponse.json({ success: true })
   } catch (error) {
     return NextResponse.json({ error: 'ลบไม่สำเร็จ' }, { status: 500 })

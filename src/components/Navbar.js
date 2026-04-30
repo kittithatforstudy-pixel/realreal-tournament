@@ -40,10 +40,10 @@ export default function Navbar({ variant = 'default' }) {
   const dark = variant === 'admin'
   const navClasses = dark
     ? 'bg-gray-900 text-white sticky top-0 z-40'
-    : 'bg-white border-b border-gray-200 sticky top-0 z-40'
+    : 'bg-cream-50/90 backdrop-blur border-b border-cream-200 sticky top-0 z-40'
   const linkClasses = dark
     ? 'text-gray-300 hover:text-white transition-colors'
-    : 'text-gray-600 hover:text-blue-500 transition-colors'
+    : 'text-gray-700 hover:text-amber-600 transition-colors'
 
   return (
     <nav className={navClasses}>

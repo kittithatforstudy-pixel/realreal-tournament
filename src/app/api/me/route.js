@@ -38,3 +38,38 @@ export async function GET() {
     return NextResponse.json({ error: 'เกิดข้อผิดพลาด' }, { status: 500 })
   }
 }
+
+export async function PUT(request) {
+  try {
+    const session = await getCurrentUser()
+    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const body = await request.json()
+    // Only allow self-editable profile fields.
+    const allowed = ['displayName', 'phone', 'discordId', 'lineId', 'avatar']
+    const update = {}
+    for (const k of allowed) {
+      if (k in body) {
+        const v = body[k]
+        update[k] = (v === '' || v == null) ? null : String(v).trim()
+      }
+    }
+    if (Object.keys(update).length === 0) {
+      return NextResponse.json({ error: 'ไม่มีข้อมูลให้บันทึก' }, { status: 400 })
+    }
+    update.updatedAt = new Date().toISOString()
+
+    const { data: user, error } = await supabase
+      .from('User')
+      .update(update)
+      .eq('id', session.userId)
+      .select('id, email, username, displayName, avatar, phone, role, discordId, lineId, createdAt')
+      .single()
+    if (error) throw error
+
+    return NextResponse.json({ user })
+  } catch (error) {
+    console.error('Update me error:', error)
+    return NextResponse.json({ error: 'อัปเดตไม่สำเร็จ' }, { status: 500 })
+  }
+}

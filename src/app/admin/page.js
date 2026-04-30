@@ -2,8 +2,11 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Navbar from '@/components/Navbar'
+import { useToast } from '@/components/Toast'
 
 export default function AdminPage() {
+  const toast = useToast()
   const [tournaments, setTournaments] = useState([])
   const [payments, setPayments] = useState([])
   const [games, setGames] = useState([])
@@ -43,6 +46,10 @@ export default function AdminPage() {
     })
     if (res.ok) {
       setPayments(prev => prev.filter(p => p.id !== paymentId))
+      toast.show(action === 'approve' ? 'Approve สลิปแล้ว' : 'Reject สลิปแล้ว', 'success')
+    } else {
+      const d = await res.json().catch(() => ({}))
+      toast.show(d.error || 'ดำเนินการไม่สำเร็จ', 'error')
     }
   }
 
@@ -58,7 +65,7 @@ export default function AdminPage() {
     if (!res.ok) {
       setCreateMsg(data.error || 'สร้างไม่สำเร็จ')
     } else {
-      setCreateMsg('สร้างสำเร็จ!')
+      toast.show('สร้างทัวร์เรียบร้อย', 'success')
       setTournaments(prev => [data, ...prev])
       setShowCreate(false)
       setCreateForm({ name: '', gameName: '', format: 'SINGLE_ELIM', maxParticipants: 16, entryFee: 0, teamMode: true, teamSize: 5 })
@@ -69,10 +76,10 @@ export default function AdminPage() {
     const res = await fetch(`/api/tournaments/${tournamentId}/bracket`, { method: 'POST' })
     const data = await res.json()
     if (res.ok) {
-      alert(`สร้าง bracket สำเร็จ! ${data.matchCount} แมตช์`)
+      toast.show(`สร้าง bracket สำเร็จ (${data.matchCount} แมตช์)`, 'success')
       setTournaments(prev => prev.map(t => t.id === tournamentId ? { ...t, status: 'LIVE' } : t))
     } else {
-      alert(data.error || 'สร้าง bracket ไม่สำเร็จ')
+      toast.show(data.error || 'สร้าง bracket ไม่สำเร็จ', 'error')
     }
   }
 
@@ -84,29 +91,23 @@ export default function AdminPage() {
     })
     if (res.ok) {
       setTournaments(prev => prev.map(t => t.id === tournamentId ? { ...t, status } : t))
+      toast.show('อัปเดตสถานะแล้ว', 'success')
+    } else {
+      const d = await res.json().catch(() => ({}))
+      toast.show(d.error || 'อัปเดตสถานะไม่สำเร็จ', 'error')
     }
   }
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center text-gray-400">กำลังโหลด...</div>
+  if (loading) return (
+    <main className="min-h-screen bg-gray-50">
+      <Navbar variant="admin" />
+      <div className="flex items-center justify-center py-32 text-gray-400">กำลังโหลด...</div>
+    </main>
+  )
 
   return (
     <main className="min-h-screen bg-gray-50">
-      {/* Navbar */}
-      <nav className="bg-gray-900 text-white sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-4">
-              <Link href="/" className="flex items-center gap-2">
-                <span className="text-xl">⚡</span>
-                <span className="font-head font-bold text-lg">RealReal Admin</span>
-              </Link>
-              <span className="text-gray-400 text-sm">|</span>
-              <span className="text-gray-300 text-sm">Admin Panel</span>
-            </div>
-            <Link href="/" className="text-gray-300 hover:text-white text-sm">← กลับหน้าหลัก</Link>
-          </div>
-        </div>
-      </nav>
+      <Navbar variant="admin" />
 
       {error && (
         <div className="max-w-5xl mx-auto px-4 pt-6">

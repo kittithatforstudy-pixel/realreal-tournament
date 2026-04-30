@@ -56,11 +56,16 @@ export async function POST(request) {
       game = newGame
     }
 
-    const { gameName: _, ...rest } = data
+    // Strip server-managed and relational fields so client cannot override id, createdById, etc.
+    const {
+      id: _id, gameName: _gn, gameId: _gid, createdById: _cb, createdAt: _ca, updatedAt: _ua,
+      game: _g, teams: _t, registrations: _r, matches: _m, _count,
+      ...rest
+    } = data
     const now = new Date().toISOString()
     const { data: tournament, error } = await supabase.from('Tournament').insert({
-      id: crypto.randomUUID(),
       ...rest,
+      id: crypto.randomUUID(),
       gameId: game.id,
       createdById: user.userId,
       mapPool: data.mapPool || [],

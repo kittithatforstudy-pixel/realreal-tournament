@@ -89,15 +89,13 @@ export async function PUT(request, { params }) {
     if (error) throw error
 
     const { data: allMatches } = await supabase.from('Match').select('*').eq('tournamentId', id).order('round').order('matchNumber')
-    const updated = advanceWinner(allMatches, match)
-    for (const m of updated) {
-      if (m.id !== matchId) {
-        await supabase.from('Match').update({
-          participantAId: m.participantAId,
-          participantBId: m.participantBId,
-          status: m.status
-        }).eq('id', m.id)
-      }
+    const next = advanceWinner(allMatches || [], match)
+    if (next) {
+      await supabase.from('Match').update({
+        participantAId: next.participantAId,
+        participantBId: next.participantBId,
+        status: next.status
+      }).eq('id', next.id)
     }
 
     const { data: tournamentData } = await supabase.from('Tournament').select('name, discordWebhook').eq('id', id).single()

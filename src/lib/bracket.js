@@ -118,31 +118,23 @@ function seedTeams(teams, seedingType) {
   }
 }
 
+// Place the winner of finishedMatch into the next round's match.
+// Returns the modified next match (or null if there's no next round).
 export function advanceWinner(matches, finishedMatch) {
-  const round = finishedMatch.round
-  const matchIdx = finishedMatch.matchNumber
-  const nextRound = round + 1
-
-  // Find next match (winner goes to)
-  const nextMatchNumber = Math.ceil(matchIdx / 2)
-  const isTopSlot = matchIdx % 2 !== 0
-
+  const nextMatchNumber = Math.ceil(finishedMatch.matchNumber / 2)
+  const isTopSlot = finishedMatch.matchNumber % 2 !== 0
   const nextMatch = matches.find(
-    m => m.round === nextRound && m.matchNumber === nextMatchNumber && m.bracket === finishedMatch.bracket
+    m => m.round === finishedMatch.round + 1
+      && m.matchNumber === nextMatchNumber
+      && m.bracket === finishedMatch.bracket
   )
+  if (!nextMatch) return null
 
-  if (nextMatch) {
-    if (isTopSlot) {
-      nextMatch.participantAId = finishedMatch.winnerId
-    } else {
-      nextMatch.participantBId = finishedMatch.winnerId
-    }
+  if (isTopSlot) nextMatch.participantAId = finishedMatch.winnerId
+  else nextMatch.participantBId = finishedMatch.winnerId
 
-    // If both slots filled, mark as READY
-    if (nextMatch.participantAId && nextMatch.participantBId) {
-      nextMatch.status = 'READY'
-    }
+  if (nextMatch.participantAId && nextMatch.participantBId) {
+    nextMatch.status = 'READY'
   }
-
-  return matches
+  return nextMatch
 }

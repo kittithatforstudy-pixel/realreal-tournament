@@ -72,6 +72,19 @@ export async function POST(request, { params }) {
     }).select().single()
     if (regError) throw regError
 
+    // Atomic capacity enforcement: rank by createdAt; rollback if past capacity.
+    // Catches the race where two concurrent signups both pass the pre-check.
+    const { data: ordered } = tournament.teamMode
+      ? await supabase.from('Team').select('id').eq('tournamentId', id).order('createdAt')
+      : await supabase.from('Registration').select('id').eq('tournamentId', id).order('createdAt')
+    const myId = tournament.teamMode ? team?.id : registration.id
+    const position = (ordered || []).findIndex(r => r.id === myId)
+    if (position === -1 || position >= tournament.maxParticipants) {
+      await supabase.from('Registration').delete().eq('id', registration.id)
+      if (team) await supabase.from('Team').delete().eq('id', team.id)
+      return NextResponse.json({ error: 'ทัวร์นาเมนต์เต็มแล้ว' }, { status: 400 })
+    }
+
     if (tournament.entryFee > 0 && slipUrl) {
       await supabase.from('Payment').insert({
         id: crypto.randomUUID(),

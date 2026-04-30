@@ -49,6 +49,18 @@ export function getWebhook(url) {
   return new DiscordWebhook(url || process.env.DISCORD_WEBHOOK_URL)
 }
 
+export function isValidDiscordWebhookUrl(url) {
+  if (!url) return true // optional field
+  try {
+    const u = new URL(url)
+    if (u.protocol !== 'https:') return false
+    if (u.hostname !== 'discord.com' && u.hostname !== 'discordapp.com') return false
+    return u.pathname.startsWith('/api/webhooks/')
+  } catch {
+    return false
+  }
+}
+
 // Notification templates
 export async function notifyRegistration(webhook, playerName, tournament) {
   return webhook.sendEmbed('✅ สมัครสำเร็จ!', `**${playerName}** เข้าร่วม **${tournament}**`, '#57f287')

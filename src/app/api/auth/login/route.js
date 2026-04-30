@@ -4,10 +4,12 @@ import { verifyPassword, createToken } from '@/lib/auth'
 
 export async function POST(request) {
   try {
-    const { email, password } = await request.json()
+    const body = await request.json()
+    const email = (body.email || '').trim().toLowerCase()
+    const password = body.password || ''
     if (!email || !password) return NextResponse.json({ error: 'กรุณากรอก email และ password' }, { status: 400 })
 
-    const { data: user } = await supabase.from('User').select('*').eq('email', email).maybeSingle()
+    const { data: user } = await supabase.from('User').select('*').ilike('email', email).maybeSingle()
     if (!user) return NextResponse.json({ error: 'Email หรือ Password ไม่ถูกต้อง' }, { status: 401 })
 
     const valid = await verifyPassword(password, user.passwordHash)

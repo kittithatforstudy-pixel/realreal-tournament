@@ -3,9 +3,11 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { useToast } from '@/components/Toast'
 
 export default function RegisterPage() {
   const router = useRouter()
+  const toast = useToast()
   const [form, setForm] = useState({
     email: '',
     username: '',
@@ -16,18 +18,32 @@ export default function RegisterPage() {
   })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+
+  const passwordRules = [
+    { label: 'อย่างน้อย 8 ตัวอักษร', ok: form.password.length >= 8 },
+    { label: 'มีตัวเลขอย่างน้อย 1 ตัว', ok: /\d/.test(form.password) },
+    { label: 'รหัสผ่านตรงกัน', ok: form.password.length > 0 && form.password === form.confirmPassword }
+  ]
 
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
 
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      setError('รูปแบบ email ไม่ถูกต้อง')
+      return
+    }
     if (form.password !== form.confirmPassword) {
       setError('รหัสผ่านไม่ตรงกัน')
       return
     }
-
-    if (form.password.length < 6) {
-      setError('รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร')
+    if (form.password.length < 8) {
+      setError('รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร')
+      return
+    }
+    if (!/\d/.test(form.password)) {
+      setError('รหัสผ่านต้องมีตัวเลขอย่างน้อย 1 ตัว')
       return
     }
 
@@ -53,6 +69,7 @@ export default function RegisterPage() {
         return
       }
 
+      toast.show('สมัครสมาชิกสำเร็จ ยินดีต้อนรับ!', 'success')
       router.push('/')
       router.refresh()
     } catch {
@@ -65,7 +82,6 @@ export default function RegisterPage() {
   return (
     <main className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
-        {/* Logo */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2">
             <span className="text-3xl">⚡</span>
@@ -92,6 +108,7 @@ export default function RegisterPage() {
                 value={form.email}
                 onChange={e => setForm({ ...form, email: e.target.value })}
                 required
+                autoComplete="email"
               />
             </div>
 
@@ -104,6 +121,8 @@ export default function RegisterPage() {
                 value={form.username}
                 onChange={e => setForm({ ...form, username: e.target.value })}
                 required
+                minLength={3}
+                autoComplete="username"
               />
             </div>
 
@@ -126,32 +145,52 @@ export default function RegisterPage() {
                 placeholder="08X-XXX-XXXX"
                 value={form.phone}
                 onChange={e => setForm({ ...form, phone: e.target.value })}
+                autoComplete="tel"
               />
             </div>
 
             <div>
               <label className="label">Password <span className="text-red-500">*</span></label>
-              <input
-                type="password"
-                className="input"
-                placeholder="อย่างน้อย 6 ตัวอักษร"
-                value={form.password}
-                onChange={e => setForm({ ...form, password: e.target.value })}
-                required
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  className="input pr-20"
+                  placeholder="อย่างน้อย 8 ตัวอักษร + ตัวเลข"
+                  value={form.password}
+                  onChange={e => setForm({ ...form, password: e.target.value })}
+                  required
+                  autoComplete="new-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(s => !s)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500 hover:text-gray-700"
+                >
+                  {showPassword ? 'ซ่อน' : 'แสดง'}
+                </button>
+              </div>
             </div>
 
             <div>
               <label className="label">ยืนยัน Password <span className="text-red-500">*</span></label>
               <input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 className="input"
                 placeholder="••••••••"
                 value={form.confirmPassword}
                 onChange={e => setForm({ ...form, confirmPassword: e.target.value })}
                 required
+                autoComplete="new-password"
               />
             </div>
+
+            <ul className="text-xs space-y-1 -mt-1">
+              {passwordRules.map((r, i) => (
+                <li key={i} className={r.ok ? 'text-green-600' : 'text-gray-400'}>
+                  {r.ok ? '✓' : '○'} {r.label}
+                </li>
+              ))}
+            </ul>
 
             <button
               type="submit"

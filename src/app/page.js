@@ -1,27 +1,10 @@
 import Link from 'next/link'
+import Navbar from '@/components/Navbar'
 
 export default function HomePage() {
   return (
     <main className="min-h-screen">
-      {/* Navbar */}
-      <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <Link href="/" className="flex items-center gap-2">
-              <span className="text-2xl">⚡</span>
-              <span className="font-head font-bold text-xl text-gray-900">RealReal Tournament</span>
-            </Link>
-            <div className="hidden md:flex items-center gap-6">
-              <Link href="/tournaments" className="text-gray-600 hover:text-blue-500 transition-colors">ทัวร์นาเมนต์</Link>
-              <Link href="/profile" className="text-gray-600 hover:text-blue-500 transition-colors">โปรไฟล์</Link>
-            </div>
-            <div className="flex items-center gap-3">
-              <Link href="/auth/login" className="btn-secondary text-sm">เข้าสู่ระบบ</Link>
-              <Link href="/auth/register" className="btn-primary text-sm">สมัครสมาชิก</Link>
-            </div>
-          </div>
-        </div>
-      </nav>
+      <Navbar />
 
       {/* Hero */}
       <section className="relative overflow-hidden bg-gradient-to-br from-blue-50 via-white to-purple-50 py-20 lg:py-28">
@@ -36,12 +19,12 @@ export default function HomePage() {
           <p className="text-gray-500 text-lg md:text-xl mb-8 max-w-2xl mx-auto">
             ตั้งค่าเอง ทุกอย่าง — เกม · Format · ทีม · กติกา · ค่าสมัคร · เงินรางวัล
           </p>
-          <div className="flex justify-center gap-4">
+          <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
             <Link href="/tournaments" className="btn-primary text-lg px-8 py-3 shadow-lg hover:shadow-xl">
               🔥 ดูทัวร์ทั้งหมด
             </Link>
-            <Link href="/admin" className="btn-secondary text-lg px-8 py-3">
-              ⚙️ Admin Panel
+            <Link href="/auth/register" className="btn-secondary text-lg px-8 py-3">
+              สมัครเล่น
             </Link>
           </div>
         </div>

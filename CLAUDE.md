@@ -31,7 +31,9 @@
 ```
 Frontend:    Next.js 14 (App Router) + React 18 + Tailwind CSS 3.4
 Backend:     Next.js API Routes (Node.js)
-Database:    PostgreSQL (Supabase) + Prisma ORM 5.10
+Database:    PostgreSQL (Supabase)
+Data layer:  Supabase JS SDK (runtime CRUD ใน API routes)
+             + Prisma 5.22 (schema, migrations, seed เท่านั้น)
 Auth:        JWT (httpOnly cookies) + bcryptjs
 Hosting:     Vercel (auto-deploy from GitHub main)
 Webhooks:    Discord (built-in lib)

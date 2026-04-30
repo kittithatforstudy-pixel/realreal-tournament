@@ -5,6 +5,7 @@ import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import { useToast } from '@/components/Toast'
 import { SkeletonBlock } from '@/components/Skeleton'
+import ImageUpload from '@/components/ImageUpload'
 
 const REG_STATUS = {
   PENDING: { label: 'รอยืนยัน', cls: 'bg-yellow-100 text-yellow-700' },
@@ -25,7 +26,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true)
   const [authed, setAuthed] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
-  const [editForm, setEditForm] = useState({ displayName: '', phone: '', discordId: '', lineId: '' })
+  const [editForm, setEditForm] = useState({ displayName: '', phone: '', discordId: '', lineId: '', avatar: '' })
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -43,7 +44,8 @@ export default function ProfilePage() {
           displayName: d.user.displayName || '',
           phone: d.user.phone || '',
           discordId: d.user.discordId || '',
-          lineId: d.user.lineId || ''
+          lineId: d.user.lineId || '',
+          avatar: d.user.avatar || ''
         })
       })
       .catch(() => setAuthed(false))
@@ -110,7 +112,11 @@ export default function ProfilePage() {
             <div className="card p-6 mb-6">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start gap-4 min-w-0">
-                  <div className="text-5xl shrink-0">👤</div>
+                  {data.user.avatar ? (
+                    <img src={data.user.avatar} alt="" className="w-16 h-16 rounded-full object-cover shrink-0 border border-gray-200" />
+                  ) : (
+                    <div className="text-5xl shrink-0">👤</div>
+                  )}
                   <div className="flex-1 min-w-0">
                     <h1 className="font-head text-2xl font-bold text-gray-900 truncate">
                       {data.user.displayName || data.user.username}
@@ -189,6 +195,11 @@ export default function ProfilePage() {
           <div className="card p-6 w-full max-w-md my-auto">
             <h2 className="font-head text-xl font-bold mb-4">แก้ไขโปรไฟล์</h2>
             <form onSubmit={handleSave} className="space-y-4">
+              <ImageUpload
+                label="รูปโปรไฟล์"
+                value={editForm.avatar}
+                onChange={url => setEditForm(f => ({ ...f, avatar: url }))}
+              />
               <div>
                 <label className="label">ชื่อที่แสดง</label>
                 <input type="text" className="input" value={editForm.displayName}

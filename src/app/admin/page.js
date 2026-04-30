@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import { useToast } from '@/components/Toast'
+import ImageUpload from '@/components/ImageUpload'
 
 export default function AdminPage() {
   const toast = useToast()
@@ -16,7 +17,7 @@ export default function AdminPage() {
 
   // Create tournament form
   const [showCreate, setShowCreate] = useState(false)
-  const [createForm, setCreateForm] = useState({ name: '', gameName: '', format: 'SINGLE_ELIM', maxParticipants: 16, entryFee: 0, teamMode: true, teamSize: 5 })
+  const [createForm, setCreateForm] = useState({ name: '', gameName: '', banner: '', format: 'SINGLE_ELIM', maxParticipants: 16, entryFee: 0, teamMode: true, teamSize: 5 })
   const [createMsg, setCreateMsg] = useState('')
 
   useEffect(() => {
@@ -68,7 +69,7 @@ export default function AdminPage() {
       toast.show('สร้างทัวร์เรียบร้อย', 'success')
       setTournaments(prev => [data, ...prev])
       setShowCreate(false)
-      setCreateForm({ name: '', gameName: '', format: 'SINGLE_ELIM', maxParticipants: 16, entryFee: 0, teamMode: true, teamSize: 5 })
+      setCreateForm({ name: '', gameName: '', banner: '', format: 'SINGLE_ELIM', maxParticipants: 16, entryFee: 0, teamMode: true, teamSize: 5 })
     }
   }
 
@@ -307,6 +308,12 @@ export default function AdminPage() {
                 <label className="label">ชื่อทัวร์ *</label>
                 <input className="input" required value={createForm.name} onChange={e => setCreateForm(f => ({ ...f, name: e.target.value }))} />
               </div>
+              <ImageUpload
+                label="Banner ทัวร์ (ตัวเลือก)"
+                value={createForm.banner}
+                onChange={url => setCreateForm(f => ({ ...f, banner: url }))}
+                helpText="ขนาดแนะนำ 1200×400 px"
+              />
               <div>
                 <label className="label">เกม * <span className="text-gray-400 font-normal">(พิมพ์ชื่อเกม เช่น Valorant, RoV, PUBG)</span></label>
                 <input

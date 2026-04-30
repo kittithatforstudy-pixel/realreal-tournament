@@ -69,16 +69,20 @@ URL: https://osoqmehhznstuelouzcu.supabase.co
 
 ### Environment Variables (ใน Vercel)
 ```
-DATABASE_URL          → Supabase Postgres connection string (Prisma migrations + seed)
-SUPABASE_URL          → https://osoqmehhznstuelouzcu.supabase.co (Supabase JS SDK at runtime)
-SUPABASE_SERVICE_KEY  → service role key (Supabase JS SDK at runtime)
-JWT_SECRET            → tournament-secret-2024
-DISCORD_WEBHOOK_URL   → https://discord.com/api/webhooks/1498503834149064725/...
-NEXT_PUBLIC_APP_URL   → https://realreal-tournament.vercel.app
-NEXT_PUBLIC_APP_NAME  → RealReal Tournament
+DATABASE_URL                        → Supabase Postgres connection string (Prisma migrations + seed)
+SUPABASE_URL                        → https://osoqmehhznstuelouzcu.supabase.co (Supabase JS SDK at runtime)
+SUPABASE_SERVICE_KEY                → service role key (Supabase JS SDK at runtime)
+JWT_SECRET                          → tournament-secret-2024
+DISCORD_WEBHOOK_URL                 → https://discord.com/api/webhooks/1498503834149064725/...
+NEXT_PUBLIC_APP_URL                 → https://realreal-tournament.vercel.app
+NEXT_PUBLIC_APP_NAME                → RealReal Tournament
+NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME   → (optional) Cloudinary cloud name
+NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET→ (optional) Cloudinary unsigned upload preset
 ```
 
 > หมายเหตุ: API routes ใช้ Supabase JS SDK ที่ runtime (ต้องการ `SUPABASE_URL` + `SUPABASE_SERVICE_KEY`) ส่วน Prisma ใช้สำหรับ schema/migrations/seed ผ่าน `DATABASE_URL`
+>
+> ถ้าไม่ตั้ง `NEXT_PUBLIC_CLOUDINARY_*` ระบบอัพโหลดสลิป/avatar/banner จะ fallback เป็นช่องกรอก URL แทน
 
 ---
 
@@ -92,6 +96,24 @@ Role:     SUPER_ADMIN
 ```
 
 ⚠️ **เปลี่ยนรหัส admin หลังจาก deploy production**
+
+---
+
+## 📷 File Upload Setup (Cloudinary — optional)
+
+ใช้สำหรับอัพโหลด: **สลิปการโอนเงิน**, **รูปโปรไฟล์ผู้ใช้**, **banner ทัวร์นาเมนต์**
+
+### ขั้นตอนตั้งค่า (free tier เพียงพอ)
+1. สมัครฟรีที่ [cloudinary.com](https://cloudinary.com)
+2. หน้า **Dashboard** → คัดลอก `Cloud name`
+3. **Settings → Upload → Add upload preset**
+   - Signing Mode: **Unsigned**
+   - กด Save → คัดลอกชื่อ preset
+4. ใส่ทั้งสองค่าใน Vercel:
+   - `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` = cloud name
+   - `NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET` = preset name
+
+> **ถ้าไม่ตั้งค่า** UI จะ fallback เป็นช่องกรอก URL ผู้ใช้ต้องอัพโหลดรูปไป image host เอง (เช่น imgur) แล้ววาง URL
 
 ---
 
@@ -119,7 +141,7 @@ realreal-tournament/
 │   │   │   │   ├── pending/route.js            # GET pending payments
 │   │   │   │   └── [id]/approve/route.js       # PUT approve/reject
 │   │   │   ├── games/route.js                  # GET/POST games
-│   │   │   └── me/route.js                     # GET current user profile
+│   │   │   └── me/route.js                     # GET/PUT current user profile
 │   │   │
 │   │   ├── auth/
 │   │   │   ├── login/page.js
@@ -139,11 +161,18 @@ realreal-tournament/
 │   │   ├── layout.js                           # Root layout
 │   │   └── page.js                             # Homepage
 │   │
+│   ├── components/                             # Shared UI
+│   │   ├── Navbar.js                           # Auth-aware nav (desktop + mobile)
+│   │   ├── Toast.js                            # Toast notifications
+│   │   ├── Skeleton.js                         # Loading skeletons
+│   │   ├── ImageUpload.js                      # Cloudinary unsigned upload (URL fallback)
+│   │   └── Providers.js                        # Client-side providers wrapper
+│   │
 │   └── lib/
 │       ├── auth.js                             # JWT, bcrypt, requireAuth
-│       ├── db.js                               # Prisma client singleton
+│       ├── supabase.js                         # Supabase client (lazy init)
 │       ├── bracket.js                          # Bracket generators
-│       └── discord.js                          # Discord webhook helpers
+│       └── discord.js                          # Discord webhook helpers + URL validator
 │
 ├── .env.example
 ├── next.config.js
@@ -234,4 +263,4 @@ Custom CSS classes in `globals.css`:
 ---
 
 **Last Updated:** 2026-04-30  
-**Version:** 1.0.1
+**Version:** 1.1.0

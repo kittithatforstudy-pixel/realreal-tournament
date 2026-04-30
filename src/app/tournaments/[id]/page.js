@@ -6,6 +6,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Navbar from '@/components/Navbar'
 import { useToast } from '@/components/Toast'
 import { SkeletonBlock, SkeletonLine } from '@/components/Skeleton'
+import ImageUpload from '@/components/ImageUpload'
 
 const STATUS_LABEL = {
   OPEN: { label: 'เปิดรับสมัคร', cls: 'badge-open' },
@@ -365,20 +366,12 @@ export default function TournamentDetailPage() {
                     </select>
                   </div>
 
-                  <div>
-                    <label className="label">ลิงก์รูปสลิป (HTTPS) <span className="text-red-500">*</span></label>
-                    <input
-                      type="url"
-                      className="input"
-                      placeholder="https://..."
-                      value={regForm.slipUrl}
-                      onChange={e => setRegForm({ ...regForm, slipUrl: e.target.value })}
-                      required
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      อัพโหลดรูปสลิปไป image host (เช่น <a href="https://imgur.com/upload" target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">imgur</a>) แล้วคัดลอก direct link มาวาง
-                    </p>
-                  </div>
+                  <ImageUpload
+                    label="รูปสลิปการโอน *"
+                    value={regForm.slipUrl}
+                    onChange={url => setRegForm(f => ({ ...f, slipUrl: url }))}
+                    helpText="อัพโหลดรูปสลิปจากเครื่องของคุณ"
+                  />
 
                   <div>
                     <label className="label">หมายเหตุ (ถ้ามี)</label>

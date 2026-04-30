@@ -10,7 +10,12 @@ export async function GET(request, { params }) {
       supabase.from('Tournament').select('*, game:Game(*)').eq('id', id).single(),
       supabase.from('Team').select('*, members:TeamMember(*, user:User(id, username, displayName))').eq('tournamentId', id),
       supabase.from('Registration').select('*, user:User(id, username, displayName), payments:Payment(*)').eq('tournamentId', id),
-      supabase.from('Match').select('*').eq('tournamentId', id).order('round').order('matchNumber')
+      supabase
+        .from('Match')
+        .select('*, participantA:Team!participantAId(id, name), participantB:Team!participantBId(id, name), winner:Team!winnerId(id, name)')
+        .eq('tournamentId', id)
+        .order('round')
+        .order('matchNumber')
     ])
 
     if (!tournament) return NextResponse.json({ error: 'ไม่พบทัวร์นาเมนต์' }, { status: 404 })
@@ -39,8 +44,10 @@ export async function PUT(request, { params }) {
     await requireAdmin()
     const { id } = await params
     const data = await request.json()
+    // Strip server-managed and relational fields the client must not write directly
+    const { id: _id, game, teams, registrations, matches, _count, createdBy, createdAt, updatedAt, ...updateData } = data
     const { data: tournament, error } = await supabase.from('Tournament')
-      .update({ ...data, updatedAt: new Date().toISOString() })
+      .update({ ...updateData, updatedAt: new Date().toISOString() })
       .eq('id', id)
       .select('*, game:Game(*)')
       .single()
@@ -48,6 +55,7 @@ export async function PUT(request, { params }) {
     return NextResponse.json(tournament)
   } catch (error) {
     if (error.message === 'Forbidden') return NextResponse.json({ error: 'ไม่มีสิทธิ์' }, { status: 403 })
+    console.error('Update tournament error:', error)
     return NextResponse.json({ error: 'อัปเดตไม่สำเร็จ' }, { status: 500 })
   }
 }
@@ -60,6 +68,8 @@ export async function DELETE(request, { params }) {
     if (error) throw error
     return NextResponse.json({ success: true })
   } catch (error) {
+    if (error.message === 'Forbidden') return NextResponse.json({ error: 'ไม่มีสิทธิ์' }, { status: 403 })
+    console.error('Delete tournament error:', error)
     return NextResponse.json({ error: 'ลบไม่สำเร็จ' }, { status: 500 })
   }
 }

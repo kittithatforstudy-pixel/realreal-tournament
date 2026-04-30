@@ -9,15 +9,24 @@ export async function GET(request) {
     const gameId = searchParams.get('gameId')
     const format = searchParams.get('format')
 
-    let query = supabase.from('Tournament').select('*, game:Game(*)').order('createdAt', { ascending: false })
+    const all = searchParams.get('all') === '1'
+
+    let query = supabase
+      .from('Tournament')
+      .select('*, game:Game(*), teams:Team(id), registrations:Registration(id)')
+      .order('createdAt', { ascending: false })
     if (status) query = query.eq('status', status)
-    else query = query.neq('status', 'DRAFT')
+    else if (!all) query = query.neq('status', 'DRAFT')
     if (gameId) query = query.eq('gameId', gameId)
     if (format) query = query.eq('format', format)
 
     const { data: tournaments, error } = await query
     if (error) throw error
-    return NextResponse.json((tournaments || []).map(t => ({ ...t, _count: { registrations: 0, teams: 0 } })))
+    const result = (tournaments || []).map(t => {
+      const { teams = [], registrations = [], ...rest } = t
+      return { ...rest, _count: { teams: teams.length, registrations: registrations.length } }
+    })
+    return NextResponse.json(result)
   } catch (error) {
     console.error('Get tournaments error:', error)
     return NextResponse.json({ error: 'เกิดข้อผิดพลาด' }, { status: 500 })

@@ -18,15 +18,18 @@ export default function AdminPage() {
 
   useEffect(() => {
     Promise.all([
-      fetch('/api/tournaments?status=').then(r => r.json()),
+      fetch('/api/tournaments?all=1').then(r => r.json()),
       fetch('/api/payments/pending').then(r => r.json()),
       fetch('/api/games').then(r => r.json()),
     ]).then(([t, p, g]) => {
+      if (!Array.isArray(p)) {
+        setError('ไม่สามารถโหลดข้อมูลได้ กรุณาเข้าสู่ระบบด้วยบัญชี Admin')
+      }
       setTournaments(Array.isArray(t) ? t : [])
       setPayments(Array.isArray(p) ? p : [])
       setGames(Array.isArray(g) ? g : [])
       setLoading(false)
-    }).catch(e => {
+    }).catch(() => {
       setError('ไม่สามารถโหลดข้อมูลได้ กรุณาเข้าสู่ระบบด้วยบัญชี Admin')
       setLoading(false)
     })
@@ -65,7 +68,12 @@ export default function AdminPage() {
   async function handleGenerateBracket(tournamentId) {
     const res = await fetch(`/api/tournaments/${tournamentId}/bracket`, { method: 'POST' })
     const data = await res.json()
-    alert(res.ok ? `สร้าง bracket สำเร็จ! ${data.matchCount} แมตช์` : data.error)
+    if (res.ok) {
+      alert(`สร้าง bracket สำเร็จ! ${data.matchCount} แมตช์`)
+      setTournaments(prev => prev.map(t => t.id === tournamentId ? { ...t, status: 'LIVE' } : t))
+    } else {
+      alert(data.error || 'สร้าง bracket ไม่สำเร็จ')
+    }
   }
 
   async function handleStatusChange(tournamentId, status) {

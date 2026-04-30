@@ -67,12 +67,16 @@ URL: https://osoqmehhznstuelouzcu.supabase.co
 
 ### Environment Variables (ใน Vercel)
 ```
-DATABASE_URL          → Supabase connection string
+DATABASE_URL          → Supabase Postgres connection string (Prisma migrations + seed)
+SUPABASE_URL          → https://osoqmehhznstuelouzcu.supabase.co (Supabase JS SDK at runtime)
+SUPABASE_SERVICE_KEY  → service role key (Supabase JS SDK at runtime)
 JWT_SECRET            → tournament-secret-2024
 DISCORD_WEBHOOK_URL   → https://discord.com/api/webhooks/1498503834149064725/...
 NEXT_PUBLIC_APP_URL   → https://realreal-tournament.vercel.app
 NEXT_PUBLIC_APP_NAME  → RealReal Tournament
 ```
+
+> หมายเหตุ: API routes ใช้ Supabase JS SDK ที่ runtime (ต้องการ `SUPABASE_URL` + `SUPABASE_SERVICE_KEY`) ส่วน Prisma ใช้สำหรับ schema/migrations/seed ผ่าน `DATABASE_URL`
 
 ---
 
@@ -112,7 +116,8 @@ realreal-tournament/
 │   │   │   ├── payments/
 │   │   │   │   ├── pending/route.js            # GET pending payments
 │   │   │   │   └── [id]/approve/route.js       # PUT approve/reject
-│   │   │   └── games/route.js                  # GET/POST games
+│   │   │   ├── games/route.js                  # GET/POST games
+│   │   │   └── me/route.js                     # GET current user profile
 │   │   │
 │   │   ├── auth/
 │   │   │   ├── login/page.js
@@ -214,7 +219,6 @@ Custom CSS classes in `globals.css`:
 1. **Tailwind v3 not v4** — ใช้ v3.4 (v4 มี build error)
 2. **postinstall: prisma generate** — สำคัญสำหรับ Vercel ห้ามลบ
 3. **JWT_SECRET ใน production** — เปลี่ยนเป็น random 32+ chars
-4. **No /api/me endpoint** — profile page ยังไม่แสดง user data จริง
 
 ---
 
@@ -227,5 +231,5 @@ Custom CSS classes in `globals.css`:
 
 ---
 
-**Last Updated:** 2026-04-29  
-**Version:** 1.0.0
+**Last Updated:** 2026-04-30  
+**Version:** 1.0.1

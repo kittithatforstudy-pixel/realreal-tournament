@@ -14,7 +14,9 @@ export async function PUT(request, { params }) {
         .update({ status: 'APPROVED', approvedById: admin.userId, approvedAt: now })
         .eq('id', id).select().single()
       if (error) throw error
-      await supabase.from('Registration').update({ status: 'CONFIRMED' }).eq('id', payment.registrationId)
+      if (payment?.registrationId) {
+        await supabase.from('Registration').update({ status: 'CONFIRMED' }).eq('id', payment.registrationId)
+      }
       return NextResponse.json({ success: true, payment })
     }
 
@@ -23,11 +25,16 @@ export async function PUT(request, { params }) {
         .update({ status: 'REJECTED', rejectionReason: rejectionReason || 'ไม่ผ่านการตรวจสอบ', approvedById: admin.userId, approvedAt: now })
         .eq('id', id).select().single()
       if (error) throw error
+      if (payment?.registrationId) {
+        await supabase.from('Registration').update({ status: 'CANCELLED' }).eq('id', payment.registrationId)
+      }
       return NextResponse.json({ success: true, payment })
     }
 
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
   } catch (error) {
+    if (error.message === 'Forbidden') return NextResponse.json({ error: 'ไม่มีสิทธิ์' }, { status: 403 })
+    console.error('Approve payment error:', error)
     return NextResponse.json({ error: 'เกิดข้อผิดพลาด' }, { status: 500 })
   }
 }

@@ -16,6 +16,19 @@ export async function POST(request, { params }) {
     const { data: existing } = await supabase.from('Registration').select('id').eq('tournamentId', id).eq('userId', user.userId).maybeSingle()
     if (existing) return NextResponse.json({ error: 'คุณสมัครทัวร์นี้แล้ว' }, { status: 409 })
 
+    // Capacity check: count current entries (teams in team mode, registrations in solo)
+    if (tournament.teamMode) {
+      const { count: teamCount } = await supabase.from('Team').select('id', { count: 'exact', head: true }).eq('tournamentId', id)
+      if ((teamCount ?? 0) >= tournament.maxParticipants) {
+        return NextResponse.json({ error: 'ทัวร์นาเมนต์เต็มแล้ว' }, { status: 400 })
+      }
+    } else {
+      const { count: regCount } = await supabase.from('Registration').select('id', { count: 'exact', head: true }).eq('tournamentId', id)
+      if ((regCount ?? 0) >= tournament.maxParticipants) {
+        return NextResponse.json({ error: 'ทัวร์นาเมนต์เต็มแล้ว' }, { status: 400 })
+      }
+    }
+
     // Create team if team mode
     let team = null
     if (tournament.teamMode && teamName) {
@@ -73,9 +86,14 @@ export async function POST(request, { params }) {
       })
     }
 
-    const webhook = getWebhook(tournament.discordWebhook)
-    await notifyRegistration(webhook, user.username, tournament.name)
-    if (slipUrl) await notifyPayment(webhook, teamName || user.username, tournament.name, amount || tournament.entryFee)
+    // Discord webhooks must never break registration flow
+    try {
+      const webhook = getWebhook(tournament.discordWebhook)
+      await notifyRegistration(webhook, user.username, tournament.name)
+      if (slipUrl) await notifyPayment(webhook, teamName || user.username, tournament.name, amount || tournament.entryFee)
+    } catch (e) {
+      console.error('Discord webhook error (ignored):', e)
+    }
 
     return NextResponse.json({
       success: true,

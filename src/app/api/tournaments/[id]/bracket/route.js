@@ -9,21 +9,38 @@ export async function POST(request, { params }) {
     await requireAdmin()
     const { id } = await params
 
-    const [{ data: tournament }, { data: teams }, { data: registrations }] = await Promise.all([
-      supabase.from('Tournament').select('*').eq('id', id).single(),
-      supabase.from('Team').select('*').eq('tournamentId', id),
-      supabase.from('Registration').select('*, user:User(id, username)').eq('tournamentId', id).eq('status', 'CONFIRMED')
-    ])
-
+    const { data: tournament } = await supabase.from('Tournament').select('*').eq('id', id).single()
     if (!tournament) return NextResponse.json({ error: 'ไม่พบทัวร์' }, { status: 404 })
 
+    let participants
+    if (tournament.teamMode) {
+      // Only teams whose registration is CONFIRMED
+      const { data: confirmedRegs } = await supabase
+        .from('Registration')
+        .select('teamId')
+        .eq('tournamentId', id)
+        .eq('status', 'CONFIRMED')
+        .not('teamId', 'is', null)
+      const teamIds = (confirmedRegs || []).map(r => r.teamId)
+      if (teamIds.length === 0) {
+        return NextResponse.json({ error: 'ต้องมีทีมที่ยืนยันแล้วอย่างน้อย 2 ทีม' }, { status: 400 })
+      }
+      const { data: teams } = await supabase.from('Team').select('*').in('id', teamIds)
+      participants = teams || []
+    } else {
+      const { data: regs } = await supabase
+        .from('Registration')
+        .select('*, user:User(id, username)')
+        .eq('tournamentId', id)
+        .eq('status', 'CONFIRMED')
+      participants = (regs || []).map(r => ({ id: r.userId, name: r.user?.username || r.userId }))
+    }
+
+    if (participants.length < 2) {
+      return NextResponse.json({ error: 'ต้องมีผู้เข้าแข่งที่ยืนยันแล้วอย่างน้อย 2 คน/ทีม' }, { status: 400 })
+    }
+
     await supabase.from('Match').delete().eq('tournamentId', id)
-
-    const participants = tournament.teamMode
-      ? (teams || [])
-      : (registrations || []).map(r => ({ id: r.userId, name: r.user?.username || r.userId }))
-
-    if (participants.length < 2) return NextResponse.json({ error: 'ต้องมีผู้เข้าแข่งอย่างน้อย 2 คน/ทีม' }, { status: 400 })
 
     const matches = tournament.format === 'DOUBLE_ELIM'
       ? generateDoubleElimBracket(participants, tournament.seedingType)
@@ -51,6 +68,7 @@ export async function POST(request, { params }) {
 
     return NextResponse.json({ success: true, matchCount: matchRows.length })
   } catch (error) {
+    if (error.message === 'Forbidden') return NextResponse.json({ error: 'ไม่มีสิทธิ์' }, { status: 403 })
     console.error('Generate bracket error:', error)
     return NextResponse.json({ error: 'สร้าง bracket ไม่สำเร็จ' }, { status: 500 })
   }
@@ -88,11 +106,16 @@ export async function PUT(request, { params }) {
       winnerId ? supabase.from('Team').select('name').eq('id', winnerId === match.participantAId ? match.participantBId : match.participantAId).single() : Promise.resolve({ data: null })
     ])
 
-    const webhook = getWebhook(tournamentData?.discordWebhook)
-    await notifyMatchResult(webhook, tournamentData?.name, winnerTeam?.name || 'TBD', loserTeam?.name || 'TBD', `${scoreA} - ${scoreB}`)
+    try {
+      const webhook = getWebhook(tournamentData?.discordWebhook)
+      await notifyMatchResult(webhook, tournamentData?.name, winnerTeam?.name || 'TBD', loserTeam?.name || 'TBD', `${scoreA} - ${scoreB}`)
+    } catch (e) {
+      console.error('Discord webhook error (ignored):', e)
+    }
 
     return NextResponse.json({ success: true, match })
   } catch (error) {
+    if (error.message === 'Forbidden') return NextResponse.json({ error: 'ไม่มีสิทธิ์' }, { status: 403 })
     console.error('Update match error:', error)
     return NextResponse.json({ error: 'อัปเดตผลไม่สำเร็จ' }, { status: 500 })
   }

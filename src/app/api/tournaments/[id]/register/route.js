@@ -13,6 +13,15 @@ export async function POST(request, { params }) {
     if (!tournament) return NextResponse.json({ error: 'ไม่พบทัวร์นาเมนต์' }, { status: 404 })
     if (tournament.status !== 'OPEN') return NextResponse.json({ error: 'ทัวร์นาเมนต์ยังไม่เปิดรับสมัคร' }, { status: 400 })
 
+    if (slipUrl) {
+      try {
+        const u = new URL(slipUrl)
+        if (u.protocol !== 'https:') throw new Error('not https')
+      } catch {
+        return NextResponse.json({ error: 'slipUrl ต้องเป็น HTTPS URL' }, { status: 400 })
+      }
+    }
+
     const { data: existing } = await supabase.from('Registration').select('id').eq('tournamentId', id).eq('userId', user.userId).maybeSingle()
     if (existing) return NextResponse.json({ error: 'คุณสมัครทัวร์นี้แล้ว' }, { status: 409 })
 

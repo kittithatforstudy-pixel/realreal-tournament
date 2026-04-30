@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import supabase from '@/lib/supabase'
 import { requireAdmin } from '@/lib/auth'
+import { isValidDiscordWebhookUrl } from '@/lib/discord'
 
 export async function GET(request) {
   try {
@@ -40,6 +41,9 @@ export async function POST(request) {
 
     const gameName = (data.gameName || '').trim()
     if (!gameName) return NextResponse.json({ error: 'กรุณาระบุชื่อเกม' }, { status: 400 })
+    if (!isValidDiscordWebhookUrl(data.discordWebhook)) {
+      return NextResponse.json({ error: 'Discord webhook URL ไม่ถูกต้อง' }, { status: 400 })
+    }
 
     let { data: game } = await supabase.from('Game').select('id,name').ilike('name', gameName).maybeSingle()
     if (!game) {

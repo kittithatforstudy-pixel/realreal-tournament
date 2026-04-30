@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import supabase from '@/lib/supabase'
 import { requireAdmin } from '@/lib/auth'
+import { isValidDiscordWebhookUrl } from '@/lib/discord'
 
 export async function GET(request, { params }) {
   try {
@@ -44,6 +45,9 @@ export async function PUT(request, { params }) {
     await requireAdmin()
     const { id } = await params
     const data = await request.json()
+    if ('discordWebhook' in data && !isValidDiscordWebhookUrl(data.discordWebhook)) {
+      return NextResponse.json({ error: 'Discord webhook URL ไม่ถูกต้อง' }, { status: 400 })
+    }
     // Strip server-managed and relational fields the client must not write directly
     const { id: _id, game, teams, registrations, matches, _count, createdBy, createdAt, updatedAt, ...updateData } = data
     const { data: tournament, error } = await supabase.from('Tournament')

@@ -59,7 +59,8 @@ export async function POST(request) {
     // Strip server-managed and relational fields so client cannot override id, createdById, etc.
     const {
       id: _id, gameName: _gn, gameId: _gid, createdById: _cb, createdAt: _ca, updatedAt: _ua,
-      game: _g, teams: _t, registrations: _r, matches: _m, _count,
+      game: _g, teams: _t, registrations: _r, matches: _m, invites: _i, _count,
+      invitees, // optional list of usernames/emails to seed invites
       ...rest
     } = data
     const now = new Date().toISOString()
@@ -74,6 +75,33 @@ export async function POST(request) {
       updatedAt: now
     }).select('*, game:Game(*)').single()
     if (error) throw error
+
+    // Seed invites if invite-only and a list was provided
+    if (tournament.inviteOnly && Array.isArray(invitees) && invitees.length > 0) {
+      const rows = []
+      for (const raw of invitees) {
+        const value = String(raw || '').trim()
+        if (!value) continue
+        const isEmail = value.includes('@')
+        const lookup = isEmail
+          ? supabase.from('User').select('id').ilike('email', value).maybeSingle()
+          : supabase.from('User').select('id').ilike('username', value).maybeSingle()
+        const { data: targetUser } = await lookup
+        rows.push({
+          id: crypto.randomUUID(),
+          tournamentId: tournament.id,
+          email: isEmail ? value.toLowerCase() : null,
+          username: isEmail ? null : value,
+          userId: targetUser?.id || null,
+          status: 'PENDING',
+          invitedById: user.userId,
+          createdAt: now
+        })
+      }
+      if (rows.length > 0) {
+        await supabase.from('TournamentInvite').insert(rows)
+      }
+    }
 
     return NextResponse.json(tournament, { status: 201 })
   } catch (error) {

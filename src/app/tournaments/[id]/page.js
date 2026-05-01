@@ -40,9 +40,10 @@ export default function TournamentDetailPage() {
   const [loading, setLoading] = useState(true)
   const [me, setMe] = useState(null)
   const [showRegister, setShowRegister] = useState(false)
-  const [regForm, setRegForm] = useState({ teamName: '', slipUrl: '', channel: 'PROMPTPAY', note: '' })
+  const [regForm, setRegForm] = useState({ teamName: '', inGameName: '', slipUrl: '', channel: 'PROMPTPAY', note: '' })
   const [regLoading, setRegLoading] = useState(false)
   const [regError, setRegError] = useState('')
+  const [inviteResponding, setInviteResponding] = useState(false)
 
   function loadTournament() {
     return fetch(`/api/tournaments/${id}`).then(r => r.json()).then(setTournament)
@@ -58,12 +59,43 @@ export default function TournamentDetailPage() {
     return me.registrations.find(r => r.tournament?.id === id) || null
   }, [me, id])
 
+  const myInvite = useMemo(() => {
+    if (!me?.invites) return null
+    return me.invites.find(inv => inv.tournament?.id === id) || null
+  }, [me, id])
+
+  async function respondInvite(action) {
+    if (!myInvite) return
+    setInviteResponding(true)
+    try {
+      const res = await fetch(`/api/invites/${myInvite.id}/respond`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action })
+      })
+      const d = await res.json()
+      if (!res.ok) {
+        toast.show(d.error || 'ตอบรับไม่สำเร็จ', 'error')
+      } else {
+        toast.show(action === 'accept' ? 'ตอบรับคำเชิญแล้ว' : 'ปฏิเสธคำเชิญแล้ว', 'success')
+        const updated = await fetch('/api/me').then(r => r.status === 401 ? null : r.json()).catch(() => null)
+        setMe(updated || null)
+      }
+    } finally {
+      setInviteResponding(false)
+    }
+  }
+
   async function handleRegister(e) {
     e.preventDefault()
     setRegError('')
 
+    if (!regForm.inGameName.trim()) {
+      setRegError('กรุณากรอกชื่อในเกม')
+      return
+    }
     if (tournament.entryFee > 0 && !regForm.slipUrl) {
-      setRegError('กรุณาแนบลิงก์สลิปการโอนเงิน')
+      setRegError('กรุณาแนบรูปสลิปการโอนเงิน')
       return
     }
 
@@ -74,6 +106,7 @@ export default function TournamentDetailPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           teamName: regForm.teamName || undefined,
+          inGameName: regForm.inGameName.trim(),
           slipUrl: regForm.slipUrl || undefined,
           channel: regForm.channel,
           note: regForm.note || undefined,
@@ -91,7 +124,7 @@ export default function TournamentDetailPage() {
       } else {
         toast.show('สมัครสำเร็จ! รอ Admin approve สลิป', 'success')
         setShowRegister(false)
-        setRegForm({ teamName: '', slipUrl: '', channel: 'PROMPTPAY', note: '' })
+        setRegForm({ teamName: '', inGameName: '', slipUrl: '', channel: 'PROMPTPAY', note: '' })
         await loadTournament()
         fetch('/api/me').then(r => r.status === 401 ? null : r.json()).then(d => setMe(d || null)).catch(() => {})
       }
@@ -163,6 +196,9 @@ export default function TournamentDetailPage() {
             <div className="flex items-center gap-3 mb-2 flex-wrap">
               <h1 className="font-head text-3xl font-bold text-gray-900">{tournament.name}</h1>
               <span className={`badge ${s.cls}`}>{s.label}</span>
+              {tournament.inviteOnly && (
+                <span className="badge bg-purple-100 text-purple-700">🔒 เชิญเท่านั้น</span>
+              )}
             </div>
             <p className="text-gray-500">{tournament.game?.icon} {tournament.game?.name} · {FORMAT_LABEL[tournament.format] || tournament.format}</p>
           </div>
@@ -175,9 +211,34 @@ export default function TournamentDetailPage() {
                 </span>
                 <Link href="/profile" className="text-xs text-blue-500 hover:underline">ดูในโปรไฟล์</Link>
               </div>
+              {myRegistration.inGameName && (
+                <div className="text-xs text-gray-500 mt-2">ชื่อในเกม: <strong>{myRegistration.inGameName}</strong></div>
+              )}
               {myRegistration.team && (
                 <div className="text-xs text-gray-500 mt-2">ทีม: <strong>{myRegistration.team.name}</strong></div>
               )}
+            </div>
+          ) : myInvite && myInvite.status === 'PENDING' ? (
+            <div className="card p-4 shrink-0 max-w-sm border-purple-200 bg-purple-50">
+              <div className="text-sm font-semibold text-purple-900 mb-1">📩 คุณได้รับเชิญ</div>
+              <p className="text-xs text-purple-700 mb-3">ตอบรับก่อนถึงจะสมัครแข่งได้</p>
+              <div className="flex gap-2">
+                <button onClick={() => respondInvite('accept')} disabled={inviteResponding} className="btn-primary text-sm flex-1">ตอบรับ</button>
+                <button onClick={() => respondInvite('reject')} disabled={inviteResponding} className="btn-secondary text-sm">ปฏิเสธ</button>
+              </div>
+            </div>
+          ) : myInvite && myInvite.status === 'ACCEPTED' && tournament.status === 'OPEN' ? (
+            <button onClick={() => {
+              if (!me) { router.push('/auth/login'); return }
+              setShowRegister(true)
+            }} className="btn-primary px-8 py-3 text-lg shrink-0">
+              สมัครแข่ง
+            </button>
+          ) : tournament.inviteOnly && tournament.status === 'OPEN' ? (
+            <div className="card p-4 shrink-0 max-w-xs">
+              <div className="text-sm text-gray-700">🔒 ทัวร์นี้เชิญเท่านั้น</div>
+              <p className="text-xs text-gray-500 mt-1">{me ? 'คุณยังไม่ได้รับเชิญ' : 'เข้าสู่ระบบเพื่อตรวจคำเชิญ'}</p>
+              {!me && <Link href="/auth/login" className="btn-secondary text-sm mt-2 inline-block">เข้าสู่ระบบ</Link>}
             </div>
           ) : tournament.status === 'OPEN' && (
             <button onClick={() => {
@@ -338,6 +399,19 @@ export default function TournamentDetailPage() {
                   />
                 </div>
               )}
+
+              <div>
+                <label className="label">ชื่อในเกม (IGN) <span className="text-red-500">*</span></label>
+                <input
+                  type="text"
+                  className="input"
+                  placeholder={`เช่น ${tournament.game?.name === 'Valorant' ? 'YourName#1234' : 'ชื่อในเกมของคุณ'}`}
+                  value={regForm.inGameName}
+                  onChange={e => setRegForm({ ...regForm, inGameName: e.target.value })}
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">ชื่อตัวละคร/ID ในเกมที่ใช้แข่ง</p>
+              </div>
 
               {tournament.entryFee > 0 && (
                 <>

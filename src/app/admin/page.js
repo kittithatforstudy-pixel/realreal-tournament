@@ -17,7 +17,7 @@ export default function AdminPage() {
 
   // Create tournament form
   const [showCreate, setShowCreate] = useState(false)
-  const [createForm, setCreateForm] = useState({ name: '', gameName: '', banner: '', format: 'SINGLE_ELIM', maxParticipants: 16, entryFee: 0, teamMode: true, teamSize: 5 })
+  const [createForm, setCreateForm] = useState({ name: '', gameName: '', banner: '', format: 'SINGLE_ELIM', maxParticipants: 16, entryFee: 0, teamMode: true, teamSize: 5, inviteOnly: false, inviteesText: '' })
   const [createMsg, setCreateMsg] = useState('')
 
   useEffect(() => {
@@ -57,19 +57,23 @@ export default function AdminPage() {
   async function handleCreateTournament(e) {
     e.preventDefault()
     setCreateMsg('')
+    const { inviteesText, ...rest } = createForm
+    const invitees = createForm.inviteOnly
+      ? inviteesText.split(/[\n,]+/).map(s => s.trim()).filter(Boolean)
+      : []
     const res = await fetch('/api/tournaments', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(createForm)
+      body: JSON.stringify({ ...rest, invitees })
     })
     const data = await res.json()
     if (!res.ok) {
       setCreateMsg(data.error || 'สร้างไม่สำเร็จ')
     } else {
-      toast.show('สร้างทัวร์เรียบร้อย', 'success')
+      toast.show(invitees.length > 0 ? `สร้างทัวร์ + ส่งคำเชิญ ${invitees.length} คน` : 'สร้างทัวร์เรียบร้อย', 'success')
       setTournaments(prev => [data, ...prev])
       setShowCreate(false)
-      setCreateForm({ name: '', gameName: '', banner: '', format: 'SINGLE_ELIM', maxParticipants: 16, entryFee: 0, teamMode: true, teamSize: 5 })
+      setCreateForm({ name: '', gameName: '', banner: '', format: 'SINGLE_ELIM', maxParticipants: 16, entryFee: 0, teamMode: true, teamSize: 5, inviteOnly: false, inviteesText: '' })
     }
   }
 
@@ -360,6 +364,26 @@ export default function AdminPage() {
                 <input type="checkbox" id="teamMode" checked={createForm.teamMode} onChange={e => setCreateForm(f => ({ ...f, teamMode: e.target.checked }))} className="rounded" />
                 <label htmlFor="teamMode" className="text-sm font-semibold text-gray-600">แข่งแบบทีม</label>
               </div>
+
+              <div className="border-t border-cream-200 pt-4">
+                <div className="flex items-center gap-2">
+                  <input type="checkbox" id="inviteOnly" checked={createForm.inviteOnly} onChange={e => setCreateForm(f => ({ ...f, inviteOnly: e.target.checked }))} className="rounded" />
+                  <label htmlFor="inviteOnly" className="text-sm font-semibold text-gray-600">🔒 ทัวร์เชิญเท่านั้น (Invite-only)</label>
+                </div>
+                {createForm.inviteOnly && (
+                  <div className="mt-3">
+                    <label className="label">รายชื่อผู้ที่เชิญ (1 คน/บรรทัด หรือคั่นด้วย ,)</label>
+                    <textarea
+                      className="input min-h-24 font-mono text-sm"
+                      placeholder={'username1\nusername2\nemail@example.com'}
+                      value={createForm.inviteesText}
+                      onChange={e => setCreateForm(f => ({ ...f, inviteesText: e.target.value }))}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">ใช้ username หรือ email ก็ได้ — ผู้ที่ถูกเชิญต้องตอบรับก่อนถึงจะสมัครได้</p>
+                  </div>
+                )}
+              </div>
+
               {createMsg && <div className="text-red-600 text-sm">{createMsg}</div>}
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={() => setShowCreate(false)} className="btn-secondary flex-1">ยกเลิก</button>

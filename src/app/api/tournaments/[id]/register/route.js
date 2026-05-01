@@ -7,11 +7,34 @@ export async function POST(request, { params }) {
   try {
     const user = await requireAuth()
     const { id } = await params
-    const { teamName, slipUrl, amount, channel, transferredAt, note } = await request.json()
+    const { teamName, slipUrl, amount, channel, transferredAt, note, inGameName } = await request.json()
+
+    const cleanInGameName = (inGameName || '').trim()
+    if (!cleanInGameName) {
+      return NextResponse.json({ error: 'กรุณากรอกชื่อในเกม' }, { status: 400 })
+    }
 
     const { data: tournament } = await supabase.from('Tournament').select('*').eq('id', id).single()
     if (!tournament) return NextResponse.json({ error: 'ไม่พบทัวร์นาเมนต์' }, { status: 404 })
     if (tournament.status !== 'OPEN') return NextResponse.json({ error: 'ทัวร์นาเมนต์ยังไม่เปิดรับสมัคร' }, { status: 400 })
+
+    // Invite-only enforcement: must have an ACCEPTED invite for this user
+    if (tournament.inviteOnly) {
+      const { data: account } = await supabase.from('User').select('email, username').eq('id', user.userId).maybeSingle()
+      const filters = [`userId.eq.${user.userId}`]
+      if (account?.email) filters.push(`email.ilike.${account.email}`)
+      if (account?.username) filters.push(`username.ilike.${account.username}`)
+      const { data: invite } = await supabase
+        .from('TournamentInvite')
+        .select('id, status')
+        .eq('tournamentId', id)
+        .or(filters.join(','))
+        .eq('status', 'ACCEPTED')
+        .maybeSingle()
+      if (!invite) {
+        return NextResponse.json({ error: 'ทัวร์นี้เชิญเท่านั้น คุณต้องตอบรับคำเชิญก่อน' }, { status: 403 })
+      }
+    }
 
     if (slipUrl) {
       try {
@@ -66,6 +89,7 @@ export async function POST(request, { params }) {
       tournamentId: id,
       userId: user.userId,
       teamId: team?.id || null,
+      inGameName: cleanInGameName,
       status: tournament.entryFee > 0 ? 'PENDING' : 'CONFIRMED',
       checkedIn: false,
       createdAt: new Date().toISOString()

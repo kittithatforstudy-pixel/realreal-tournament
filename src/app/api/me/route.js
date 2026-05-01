@@ -28,10 +28,21 @@ export async function GET() {
 
     if (!user) return NextResponse.json({ error: 'ไม่พบบัญชี' }, { status: 404 })
 
+    // Pending invites — match by userId, email, or username
+    const inviteFilters = [`userId.eq.${user.id}`]
+    if (user.email) inviteFilters.push(`email.ilike.${user.email}`)
+    if (user.username) inviteFilters.push(`username.ilike.${user.username}`)
+    const { data: invites } = await supabase
+      .from('TournamentInvite')
+      .select('*, tournament:Tournament(id, name, status, startsAt, entryFee, banner, game:Game(name, icon))')
+      .or(inviteFilters.join(','))
+      .order('createdAt', { ascending: false })
+
     return NextResponse.json({
       user,
       registrations: registrations || [],
-      teamMemberships: teamMemberships || []
+      teamMemberships: teamMemberships || [],
+      invites: invites || []
     })
   } catch (error) {
     console.error('Get me error:', error)

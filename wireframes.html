@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>RealReal Tournament — UI Wireframes</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #f0f0f0; color: #333; }
+
+  /* ── Layout helpers ── */
+  .page-wrap { max-width: 1280px; margin: 0 auto; }
+  .section-title {
+    background: #1e293b; color: #f8fafc;
+    padding: 10px 20px; font-size: 13px; font-weight: 700;
+    letter-spacing: 1px; text-transform: uppercase;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .dim {
+    background: #f59e0b; color: #1e293b;
+    font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px;
+    font-family: monospace; letter-spacing: 0;
+  }
+  .note {
+    background: #dbeafe; color: #1d4ed8;
+    font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 4px;
+  }
+
+  /* ── Wireframe blocks ── */
+  .wf { background: #fff; border: 1.5px solid #cbd5e1; border-radius: 6px; }
+  .wf-gray { background: #e2e8f0; border: 1.5px dashed #94a3b8; border-radius: 6px; }
+  .wf-blue { background: #dbeafe; border: 1.5px solid #3b82f6; border-radius: 6px; }
+  .wf-amber { background: #fef3c7; border: 1.5px solid #f59e0b; border-radius: 6px; }
+  .wf-green { background: #dcfce7; border: 1.5px solid #22c55e; border-radius: 6px; }
+  .wf-red { background: #fee2e2; border: 1.5px solid #ef4444; border-radius: 6px; }
+  .wf-purple { background: #ede9fe; border: 1.5px solid #8b5cf6; border-radius: 6px; }
+  .wf-img { background: #e2e8f0; border: 1.5px dashed #94a3b8; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #64748b; font-size: 11px; font-weight: 600; }
+
+  .label { font-size: 10px; color: #64748b; font-weight: 600; text-align: center; margin-top: 4px; }
+  .label-top { font-size: 10px; color: #64748b; font-weight: 600; margin-bottom: 3px; }
+
+  /* ── Spacing ── */
+  .screen { background: #fff; border: 2px solid #334155; border-radius: 10px; overflow: hidden; margin-bottom: 40px; box-shadow: 0 4px 24px rgba(0,0,0,0.12); }
+
+  .toc { position: sticky; top: 0; z-index: 100; background: #0f172a; padding: 10px 20px; display: flex; gap: 10px; flex-wrap: wrap; border-bottom: 2px solid #f59e0b; }
+  .toc a { color: #fbbf24; font-size: 12px; font-weight: 700; text-decoration: none; padding: 4px 10px; border-radius: 20px; border: 1px solid #fbbf24; white-space: nowrap; }
+  .toc a:hover { background: #fbbf24; color: #0f172a; }
+  .toc-brand { color: #f8fafc; font-size: 13px; font-weight: 800; letter-spacing: 1px; display: flex; align-items: center; }
+
+  h2.page-head {
+    font-size: 22px; font-weight: 800; padding: 20px 24px 10px;
+    border-bottom: 2px solid #e2e8f0; color: #1e293b;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .page-num { background: #f59e0b; color: #1e293b; border-radius: 50%; width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 900; flex-shrink: 0; }
+
+  /* ── Grid helpers ── */
+  .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .g4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; }
+  .g6 { display: grid; grid-template-columns: repeat(6,1fr); gap: 8px; }
+  .row { display: flex; gap: 12px; }
+  .col { display: flex; flex-direction: column; gap: 12px; }
+  .flex-end { justify-content: flex-end; }
+  .flex-center { justify-content: center; align-items: center; }
+  .flex-between { justify-content: space-between; align-items: center; }
+
+  /* sizing */
+  .h16 { height: 64px; }
+  .h20 { height: 80px; }
+  .h24 { height: 96px; }
+  .h32 { height: 128px; }
+  .h40 { height: 160px; }
+  .h48 { height: 192px; }
+  .h56 { height: 224px; }
+  .h64 { height: 256px; }
+  .h80 { height: 320px; }
+  .h96 { height: 384px; }
+  .h120 { height: 480px; }
+  .h200 { height: 800px; }
+  .w-full { width: 100%; }
+  .w-64 { width: 256px; flex-shrink: 0; }
+  .w-80 { width: 320px; flex-shrink: 0; }
+  .w-half { width: 50%; }
+  .flex-1 { flex: 1; }
+  .p4 { padding: 16px; }
+  .p6 { padding: 24px; }
+  .p8 { padding: 32px; }
+  .px4 { padding-left: 16px; padding-right: 16px; }
+  .px6 { padding-left: 24px; padding-right: 24px; }
+  .px8 { padding-left: 32px; padding-right: 32px; }
+
+  .text-xs { font-size: 11px; }
+  .text-sm { font-size: 12px; }
+  .text-base { font-size: 14px; }
+  .text-lg { font-size: 16px; }
+  .text-xl { font-size: 18px; }
+  .text-2xl { font-size: 22px; }
+  .text-3xl { font-size: 28px; }
+  .fw7 { font-weight: 700; }
+  .fw8 { font-weight: 800; }
+  .tc { text-align: center; }
+  .gray { color: #64748b; }
+  .dark { color: #1e293b; }
+
+  .mt2 { margin-top: 8px; }
+  .mt4 { margin-top: 16px; }
+  .mb2 { margin-bottom: 8px; }
+  .mb4 { margin-bottom: 16px; }
+  .gap4 { gap: 16px; }
+  .gap6 { gap: 24px; }
+  .gap8 { gap: 32px; }
+
+  /* inner section */
+  .inner { padding: 24px; }
+  .inner-sm { padding: 16px; }
+  .separator { border-top: 1px solid #e2e8f0; margin: 16px 0; }
+
+  /* annotation arrow */
+  .ann { display: flex; align-items: center; gap: 6px; font-size: 10px; color: #64748b; }
+  .ann::before { content: '↳'; color: #f59e0b; font-weight: 900; }
+
+  /* color chip */
+  .chip { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 20px; }
+  .chip-blue { background: #dbeafe; color: #1d4ed8; border: 1px solid #93c5fd; }
+  .chip-amber { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+  .chip-green { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+  .chip-red { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+  .chip-gray { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+
+  /* ruler */
+  .ruler-h { height: 20px; background: repeating-linear-gradient(90deg, #f59e0b 0 2px, transparent 2px 20px); position: relative; }
+  .ruler-v { width: 20px; background: repeating-linear-gradient(180deg, #f59e0b 0 2px, transparent 2px 20px); position: relative; }
+
+  /* mockup nav */
+  .mock-nav { height: 56px; background: #1e293b; display: flex; align-items: center; gap: 16px; padding: 0 24px; }
+  .mock-nav .logo { background: #f59e0b; color: #1e293b; padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 900; }
+  .mock-nav .nav-link { color: #94a3b8; font-size: 12px; font-weight: 600; }
+  .mock-nav .spacer { flex: 1; }
+  .mock-nav .btn { background: #3b82f6; color: #fff; padding: 5px 14px; border-radius: 6px; font-size: 11px; font-weight: 700; }
+  .mock-nav .btn-out { border: 1px solid #94a3b8; color: #94a3b8; padding: 5px 14px; border-radius: 6px; font-size: 11px; font-weight: 700; }
+
+  /* annotation box */
+  .ann-box { background: #fefce8; border: 1px solid #fcd34d; border-radius: 6px; padding: 8px 12px; font-size: 11px; color: #92400e; }
+
+  /* page container */
+  .page-container { padding: 24px; }
+
+  /* tabs */
+  .tabs { display: flex; border-bottom: 2px solid #e2e8f0; }
+  .tab { padding: 10px 20px; font-size: 12px; font-weight: 700; color: #64748b; cursor: default; }
+  .tab.active { color: #3b82f6; border-bottom: 2px solid #3b82f6; margin-bottom: -2px; }
+
+  /* table */
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { background: #f8fafc; text-align: left; padding: 8px 12px; font-size: 11px; color: #64748b; font-weight: 700; border-bottom: 1px solid #e2e8f0; }
+  td { padding: 10px 12px; border-bottom: 1px solid #f1f5f9; color: #334155; }
+
+  /* badge */
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 700; }
+  .badge-open { background: #dcfce7; color: #166534; }
+  .badge-live { background: #fee2e2; color: #991b1b; }
+  .badge-closed { background: #f1f5f9; color: #475569; }
+  .badge-draft { background: #fef3c7; color: #92400e; }
+
+  /* input mock */
+  .input-mock { border: 1.5px solid #e2e8f0; border-radius: 6px; height: 36px; background: #fff; padding: 0 12px; display: flex; align-items: center; font-size: 12px; color: #94a3b8; }
+  .input-mock-focus { border-color: #3b82f6; }
+  .select-mock { border: 1.5px solid #e2e8f0; border-radius: 6px; height: 36px; background: #fff; padding: 0 12px; display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: #334155; }
+  .select-mock::after { content: '▾'; color: #94a3b8; }
+  .label-mock { font-size: 11px; font-weight: 700; color: #475569; margin-bottom: 4px; }
+
+  /* button mock */
+  .btn-mock-primary { background: #3b82f6; color: #fff; padding: 8px 20px; border-radius: 6px; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
+  .btn-mock-secondary { background: #fff; color: #475569; padding: 8px 20px; border-radius: 6px; font-size: 12px; font-weight: 700; border: 1.5px solid #e2e8f0; display: inline-flex; align-items: center; justify-content: center; }
+  .btn-mock-success { background: #22c55e; color: #fff; padding: 6px 14px; border-radius: 6px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
+  .btn-mock-danger { background: #ef4444; color: #fff; padding: 6px 14px; border-radius: 6px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
+
+  .divider { border: none; border-top: 2px dashed #e2e8f0; margin: 32px 0; }
+
+  /* stat card */
+  .stat-card { background: #fff; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 20px; }
+  .stat-icon { font-size: 24px; margin-bottom: 8px; }
+  .stat-val { font-size: 28px; font-weight: 900; color: #1e293b; }
+  .stat-label { font-size: 11px; color: #64748b; margin-top: 2px; }
+</style>
+</head>
+<body>
+
+<!-- TOC -->
+<nav class="toc">
+  <span class="toc-brand">⚡ RealReal Wireframes</span>
+  <a href="#p1">1. Homepage</a>
+  <a href="#p2">2. Tournament List</a>
+  <a href="#p3">3. Tournament Detail</a>
+  <a href="#p4">4. Register Modal</a>
+  <a href="#p5">5. Admin Dashboard</a>
+  <a href="#p6">6. Login / Register</a>
+  <a href="#p7">7. Profile</a>
+  <a href="#p8">8. Components</a>
+</nav>
+
+<div class="page-wrap" style="padding: 32px 24px;">
+
+<!-- ════════════════════════════════════════════
+     PAGE 1 — HOMEPAGE
+════════════════════════════════════════════ -->
+<div id="p1" class="screen">
+  <h2 class="page-head"><span class="page-num">1</span> Homepage <span class="dim">1440 × ~2400 px</span></h2>
+
+  <!-- NAVBAR -->
+  <div class="section-title">Navbar <span class="dim">1440 × 56 px</span> <span class="note">position: sticky top-0</span></div>
+  <div class="mock-nav">
+    <div class="logo">⚡ RealReal</div>
+    <span class="nav-link">ทัวร์นาเมนต์</span>
+    <div class="spacer"></div>
+    <div class="btn-mock-secondary" style="padding:5px 14px;font-size:11px;">เข้าสู่ระบบ</div>
+    <div class="btn-mock-primary" style="padding:5px 14px;font-size:11px;margin-left:8px;">สมัครสมาชิก</div>
+  </div>
+
+  <!-- HERO -->
+  <div class="section-title">Hero Section <span class="dim">1440 × 480 px</span> <span class="note">bg: cream gradient + grid pattern</span></div>
+  <div style="background: linear-gradient(135deg,#fef9ee,#fef3c7,#fff7ed); padding: 60px 24px; text-align: center; position: relative; overflow: hidden;">
+    <div style="font-size:11px;font-weight:700;background:#fff;border:1px solid #e8dcb8;display:inline-flex;gap:6px;padding:5px 14px;border-radius:20px;color:#92400e;margin-bottom:16px;">⚡ ทัวร์นาเมนต์เกม จัดประจำโดย RealReal</div>
+    <div style="font-size:36px;font-weight:900;color:#1e293b;line-height:1.2;margin-bottom:12px;">ทัวร์นาเมนต์เกม<br><span style="background:linear-gradient(90deg,#f59e0b,#f97316);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">ที่จัดจริง · จัดประจำ</span></div>
+    <div style="color:#64748b;font-size:14px;margin-bottom:24px;">เลือกทัวร์ที่คุณสนใจ สมัครทีมหรือเดี่ยว ลงแข่งจริง ลุ้นเงินรางวัล</div>
+    <!-- Search bar -->
+    <div style="max-width:600px;margin:0 auto;background:#fff;border:1.5px solid #e2e8f0;border-radius:14px;padding:8px;display:flex;gap:8px;box-shadow:0 4px 16px rgba(0,0,0,.08);">
+      <div style="flex:1;display:flex;align-items:center;gap:8px;padding:0 12px;">
+        <span>🔍</span>
+        <span style="font-size:13px;color:#94a3b8;">ค้นชื่อทัวร์ หรือ ชื่อเกม...</span>
+      </div>
+      <div class="btn-mock-primary">ดูทัวร์ทั้งหมด</div>
+    </div>
+    <!-- Stats row -->
+    <div style="display:flex;justify-content:center;gap:32px;margin-top:20px;">
+      <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#64748b;"><span style="width:8px;height:8px;border-radius:50%;background:#22c55e;display:inline-block;"></span>เปิดรับสมัคร <b style="color:#1e293b;">3</b></div>
+      <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#64748b;"><span style="width:8px;height:8px;border-radius:50%;background:#ef4444;display:inline-block;"></span>กำลังแข่ง <b style="color:#1e293b;">1</b></div>
+      <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#64748b;"><span style="width:8px;height:8px;border-radius:50%;background:#f59e0b;display:inline-block;"></span>ทั้งหมด <b style="color:#1e293b;">8</b></div>
+    </div>
+    <!-- dimension annotation -->
+    <div style="position:absolute;right:16px;top:16px;font-size:10px;background:#1e293b;color:#fbbf24;padding:4px 8px;border-radius:4px;font-family:monospace;">H: 480px</div>
+  </div>
+
+  <!-- FILTERS + GRID -->
+  <div class="section-title">Tournament Grid <span class="dim">1440 × ~900 px</span> <span class="note">3 columns desktop · 2 tablet · 1 mobile</span></div>
+  <div class="inner">
+    <!-- filter row -->
+    <div class="row flex-between mb4">
+      <div>
+        <div class="text-xl fw8">🏆 ทัวร์นาเมนต์</div>
+        <div class="text-xs gray mt2">เลือกทัวร์ที่คุณสนใจและสมัครได้เลย</div>
+      </div>
+      <div class="row gap4">
+        <div>
+          <div class="label-mock">สถานะ</div>
+          <div class="select-mock" style="width:160px;">ทุกสถานะ</div>
+        </div>
+        <div>
+          <div class="label-mock">เกม</div>
+          <div class="select-mock" style="width:160px;">ทุกเกม</div>
+        </div>
+      </div>
+    </div>
+    <div style="font-size:11px;color:#64748b;margin-bottom:16px;">พบ 6 ทัวร์นาเมนต์</div>
+    <!-- tournament card grid -->
+    <div class="g3 gap6">
+      <!-- Card 1 -->
+      <div style="border:1.5px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+        <div class="wf-img h32" style="background:linear-gradient(135deg,#fde68a,#f97316,#f43f5e);">🎮 Banner Image<br><span style="font-size:10px;">1200 × 400 px</span></div>
+        <div class="inner-sm">
+          <div class="row flex-between mb2"><span class="text-base fw7">Valorant Open Cup S1</span><span class="badge badge-open">เปิดรับสมัคร</span></div>
+          <div class="text-xs gray mb2">Valorant · Single Elimination</div>
+          <div class="row flex-between">
+            <span class="text-xs gray">8 / 16 ทีม</span>
+            <span class="text-sm fw7" style="color:#92400e;">฿200</span>
+          </div>
+          <div class="text-xs gray mt2">📅 แข่ง: 15 พ.ค. 2026</div>
+          <div class="text-xs mt2" style="color:#92400e;font-weight:700;">🏆 รางวัลที่ 1: ฿5,000</div>
+        </div>
+      </div>
+      <!-- Card 2 -->
+      <div style="border:1.5px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+        <div class="wf-img h32" style="background:linear-gradient(135deg,#a5b4fc,#8b5cf6);">🎮 Banner Image</div>
+        <div class="inner-sm">
+          <div class="row flex-between mb2"><span class="text-base fw7">RoV Championship</span><span class="badge badge-live">กำลังแข่ง</span></div>
+          <div class="text-xs gray mb2">RoV · Double Elimination</div>
+          <div class="row flex-between">
+            <span class="text-xs gray">16 / 16 ทีม</span>
+            <span class="text-sm fw7" style="color:#92400e;">฿100</span>
+          </div>
+          <div class="text-xs gray mt2">📅 แข่ง: 10 พ.ค. 2026</div>
+          <div class="text-xs mt2" style="color:#92400e;font-weight:700;">🏆 รางวัลที่ 1: ฿3,000</div>
+        </div>
+      </div>
+      <!-- Card 3 -->
+      <div style="border:1.5px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+        <div class="wf-img h32">ไม่มี Banner → Gradient</div>
+        <div class="inner-sm">
+          <div class="row flex-between mb2"><span class="text-base fw7">PUBG Solo Invitational</span><span class="badge badge-open">เปิดรับสมัคร</span></div>
+          <div class="text-xs gray mb2">PUBG · Battle Royale</div>
+          <div class="row flex-between">
+            <span class="text-xs gray">5 / 20 คน</span>
+            <span class="text-sm fw7" style="color:#166534;">ฟรี</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="ann-box mt4">💡 Card ขนาด: ~380 × 280 px · hover → shadow + translate-y(-2px) + img scale(1.05)</div>
+  </div>
+
+  <!-- FEATURES -->
+  <div class="section-title">Features Section <span class="dim">1440 × 360 px</span> <span class="note">bg: #ffffff border-top</span></div>
+  <div class="inner" style="background:#fff;border-top:1px solid #e2e8f0;">
+    <div class="tc mb4"><div class="text-2xl fw8">ทำไมต้องลงแข่งกับ RealReal?</div><div class="text-sm gray mt2">ทัวร์ที่จัดจริง โปร่งใส มีระบบรองรับครบ</div></div>
+    <div class="g3 gap6" style="grid-template-columns:repeat(6,1fr);grid-template-rows:auto;">
+      <!-- just show 6 small cards -->
+      <div class="g6" style="grid-column:1/-1;">
+        {['🎮','🏆','💰','📊','✅','🤖'].map(i => `<div style="border:1.5px solid #e2e8f0;border-radius:8px;padding:16px;text-align:center;font-size:12px;"><div style="font-size:24px;margin-bottom:6px;">${i}</div><div style="font-weight:700;font-size:11px;">หัวข้อ feature</div><div style="font-size:10px;color:#94a3b8;margin-top:4px;">คำอธิบาย 1-2 บรรทัด</div></div>`).join('')}
+      </div>
+    </div>
+    <div class="g6">
+      <div style="border:1.5px solid #e2e8f0;border-radius:8px;padding:16px;text-align:center;"><div style="font-size:24px;margin-bottom:6px;">🎮</div><div style="font-weight:700;font-size:11px;">หลายเกมหลายแนว</div><div style="font-size:10px;color:#94a3b8;margin-top:4px;">FPS, MOBA, BR, ไฟท์ติ้ง</div></div>
+      <div style="border:1.5px solid #e2e8f0;border-radius:8px;padding:16px;text-align:center;"><div style="font-size:24px;margin-bottom:6px;">🏆</div><div style="font-weight:700;font-size:11px;">หลายฟอร์แมต</div><div style="font-size:10px;color:#94a3b8;margin-top:4px;">Elim, Round Robin, Swiss...</div></div>
+      <div style="border:1.5px solid #e2e8f0;border-radius:8px;padding:16px;text-align:center;"><div style="font-size:24px;margin-bottom:6px;">💰</div><div style="font-weight:700;font-size:11px;">จ่ายค่าสมัครสะดวก</div><div style="font-size:10px;color:#94a3b8;margin-top:4px;">PromptPay / ธนาคาร / TrueWallet</div></div>
+      <div style="border:1.5px solid #e2e8f0;border-radius:8px;padding:16px;text-align:center;"><div style="font-size:24px;margin-bottom:6px;">📊</div><div style="font-weight:700;font-size:11px;">Bracket Real-time</div><div style="font-size:10px;color:#94a3b8;margin-top:4px;">ติดตามสาย ดูคู่แข่ง</div></div>
+      <div style="border:1.5px solid #e2e8f0;border-radius:8px;padding:16px;text-align:center;"><div style="font-size:24px;margin-bottom:6px;">✅</div><div style="font-weight:700;font-size:11px;">Check-in ก่อนแข่ง</div><div style="font-size:10px;color:#94a3b8;margin-top:4px;">ลดดราม่า แข่งตรงเวลา</div></div>
+      <div style="border:1.5px solid #e2e8f0;border-radius:8px;padding:16px;text-align:center;"><div style="font-size:24px;margin-bottom:6px;">🤖</div><div style="font-weight:700;font-size:11px;">Discord Webhook</div><div style="font-size:10px;color:#94a3b8;margin-top:4px;">แจ้งเตือนอัตโนมัติ</div></div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div class="section-title">CTA Section <span class="dim">1440 × 200 px</span> <span class="note">bg: amber gradient</span></div>
+  <div style="background:linear-gradient(135deg,#fef9ee,#fef3c7);padding:48px 24px;text-align:center;border-top:1px solid #fde68a;">
+    <div class="text-2xl fw8">พร้อมลงสนามแล้วหรือยัง?</div>
+    <div class="text-sm gray mt2 mb4">สมัครสมาชิกฟรี เลือกทัวร์ที่ใช่ ลงแข่งได้เลย</div>
+    <div style="display:flex;justify-content:center;gap:12px;">
+      <div class="btn-mock-primary" style="padding:10px 28px;">สมัครสมาชิก</div>
+      <div class="btn-mock-secondary" style="padding:10px 28px;">เลือกทัวร์ที่จะแข่ง</div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="section-title">Footer <span class="dim">1440 × 64 px</span></div>
+  <div style="background:#292524;color:#a8a29e;padding:20px 24px;text-align:center;font-size:12px;">⚡ RealReal Tournament — ทัวร์นาเมนต์เกมที่จัดจริง</div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     PAGE 2 — TOURNAMENT LIST
+════════════════════════════════════════════ -->
+<div id="p2" class="screen">
+  <h2 class="page-head"><span class="page-num">2</span> Tournament List <span class="dim">1440 × ~1200 px</span></h2>
+  <div class="mock-nav"><div class="logo">⚡ RealReal</div><span class="nav-link" style="color:#fff;">ทัวร์นาเมนต์</span><div class="spacer"></div><div class="btn-mock-secondary" style="padding:4px 12px;font-size:11px;">เข้าสู่ระบบ</div></div>
+
+  <div class="inner">
+    <!-- page header -->
+    <div class="row flex-between mb4">
+      <div>
+        <div class="text-2xl fw8">🏆 ทัวร์นาเมนต์ทั้งหมด</div>
+        <div class="text-xs gray mt2">เลือกทัวร์ที่คุณสนใจ</div>
+      </div>
+      <div class="row gap4">
+        <div>
+          <div class="label-mock">สถานะ</div>
+          <div class="select-mock" style="width:150px;">ทุกสถานะ</div>
+        </div>
+        <div>
+          <div class="label-mock">เกม</div>
+          <div class="select-mock" style="width:150px;">ทุกเกม</div>
+        </div>
+        <div>
+          <div class="label-mock">Search</div>
+          <div class="input-mock" style="width:200px;">🔍 ค้นหา...</div>
+        </div>
+      </div>
+    </div>
+    <!-- result count -->
+    <div class="text-xs gray mb4">พบ 8 ทัวร์นาเมนต์</div>
+    <!-- full grid: 3 cols -->
+    <div class="g3 gap6">
+      <div style="border:1.5px solid #e2e8f0;border-radius:10px;overflow:hidden;"><div class="wf-img h32">Banner 1200×400</div><div class="inner-sm"><div class="row flex-between mb2"><span class="fw7" style="font-size:13px;">Valorant Open Cup S1</span><span class="badge badge-open">เปิดรับสมัคร</span></div><div class="text-xs gray">Valorant · Single Elim · 8/16 ทีม · ฿200</div></div></div>
+      <div style="border:1.5px solid #e2e8f0;border-radius:10px;overflow:hidden;"><div class="wf-img h32">Banner</div><div class="inner-sm"><div class="row flex-between mb2"><span class="fw7" style="font-size:13px;">RoV Championship</span><span class="badge badge-live">กำลังแข่ง</span></div><div class="text-xs gray">RoV · Double Elim · 16/16 ทีม · ฿100</div></div></div>
+      <div style="border:1.5px solid #e2e8f0;border-radius:10px;overflow:hidden;"><div class="wf-img h32">ไม่มี Banner</div><div class="inner-sm"><div class="row flex-between mb2"><span class="fw7" style="font-size:13px;">PUBG Solo Invitational</span><span class="badge badge-open">เปิดรับสมัคร</span></div><div class="text-xs gray">PUBG · Battle Royale · 5/20 คน · ฟรี</div></div></div>
+      <div style="border:1.5px solid #e2e8f0;border-radius:10px;overflow:hidden;"><div class="wf-img h32">Banner</div><div class="inner-sm"><div class="row flex-between mb2"><span class="fw7" style="font-size:13px;">Tekken 8 Weekly #3</span><span class="badge badge-closed">ปิดรับสมัคร</span></div><div class="text-xs gray">Tekken 8 · Single Elim · 8/8 คน · ฿50</div></div></div>
+      <div style="border:1.5px solid #e2e8f0;border-radius:10px;overflow:hidden;"><div class="wf-img h32">Banner</div><div class="inner-sm"><div class="row flex-between mb2"><span class="fw7" style="font-size:13px;">LoL Summer League</span><span class="badge badge-draft">DRAFT</span></div><div class="text-xs gray">League of Legends · Round Robin · ฟรี</div></div></div>
+      <div style="border:1.5px solid #e2e8f0;border-radius:10px;overflow:hidden;"><div class="wf-img h32">Banner</div><div class="inner-sm"><div class="row flex-between mb2"><span class="fw7" style="font-size:13px;">FIFA 26 Pro Series</span><span class="badge badge-open">เปิดรับสมัคร</span></div><div class="text-xs gray">FIFA 26 · Single Elim · 2/16 คน · ฿300</div></div></div>
+    </div>
+    <!-- pagination -->
+    <div class="row flex-center mt4 gap4">
+      <div class="btn-mock-secondary" style="padding:6px 14px;font-size:11px;">← ก่อนหน้า</div>
+      <span class="chip chip-blue">หน้า 1 / 2</span>
+      <div class="btn-mock-primary" style="padding:6px 14px;font-size:11px;">ถัดไป →</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     PAGE 3 — TOURNAMENT DETAIL
+════════════════════════════════════════════ -->
+<div id="p3" class="screen">
+  <h2 class="page-head"><span class="page-num">3</span> Tournament Detail <span class="dim">1440 × ~2200 px</span></h2>
+  <div class="mock-nav"><div class="logo">⚡ RealReal</div><span class="nav-link">ทัวร์นาเมนต์</span><div class="spacer"></div><div class="btn-mock-secondary" style="padding:4px 12px;font-size:11px;">นาย_ก</div></div>
+
+  <!-- Hero banner -->
+  <div class="section-title">Hero Banner <span class="dim">1440 × 320 px</span></div>
+  <div class="wf-img" style="height:200px;border-radius:0;background:linear-gradient(135deg,#fde68a,#f97316,#f43f5e);">
+    <div class="tc">
+      <div style="font-size:48px;">🎮</div>
+      <div style="font-size:18px;font-weight:900;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.3);">Valorant Open Cup Season 1</div>
+      <div style="margin-top:8px;display:flex;gap:8px;justify-content:center;">
+        <span class="badge badge-open">เปิดรับสมัคร</span>
+        <span class="chip chip-gray" style="font-size:10px;">Valorant · Single Elimination</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main content: 2 col layout -->
+  <div class="section-title">Content Area <span class="dim">1440 × ~1600 px</span> <span class="note">Left: detail 65% · Right: action card 35%</span></div>
+  <div class="inner">
+    <div class="row gap6">
+      <!-- LEFT -->
+      <div class="flex-1 col gap4">
+
+        <!-- Info cards row -->
+        <div class="g4" style="grid-template-columns:repeat(4,1fr);">
+          <div class="stat-card"><div class="stat-icon">👥</div><div class="stat-val">16</div><div class="stat-label">ทีมสูงสุด</div></div>
+          <div class="stat-card"><div class="stat-icon">💰</div><div class="stat-val">฿200</div><div class="stat-label">ค่าสมัคร</div></div>
+          <div class="stat-card"><div class="stat-icon">🏆</div><div class="stat-val">฿5,000</div><div class="stat-label">รางวัลที่ 1</div></div>
+          <div class="stat-card"><div class="stat-icon">📅</div><div class="stat-val">15 พ.ค.</div><div class="stat-label">วันแข่ง</div></div>
+        </div>
+
+        <!-- Tabs: ข้อมูล / รายชื่อ / Bracket -->
+        <div class="tabs">
+          <div class="tab active">ข้อมูลทัวร์</div>
+          <div class="tab">รายชื่อผู้เข้าร่วม</div>
+          <div class="tab">Bracket</div>
+        </div>
+
+        <!-- Detail tab content -->
+        <div class="wf p4">
+          <div class="fw7 text-base mb2">รายละเอียดทัวร์</div>
+          <div class="g2">
+            <div><div class="label-mock">รูปแบบการแข่ง</div><div class="text-sm">Single Elimination</div></div>
+            <div><div class="label-mock">ประเภท</div><div class="text-sm">แบบทีม (5v5)</div></div>
+            <div><div class="label-mock">Best of</div><div class="text-sm">Best of 3 (รอบชิง BO5)</div></div>
+            <div><div class="label-mock">สาย Seeding</div><div class="text-sm">Random</div></div>
+            <div><div class="label-mock">เปิดรับสมัคร</div><div class="text-sm">1–10 พ.ค. 2026</div></div>
+            <div><div class="label-mock">วันแข่งขัน</div><div class="text-sm">15 พ.ค. 2026</div></div>
+            <div><div class="label-mock">Check-in</div><div class="text-sm">30 นาทีก่อนแข่ง</div></div>
+            <div><div class="label-mock">DQ ถ้าไม่ Check-in ภายใน</div><div class="text-sm">15 นาที</div></div>
+          </div>
+        </div>
+
+        <!-- Prizes -->
+        <div class="wf p4">
+          <div class="fw7 text-base mb2">🏆 เงินรางวัล</div>
+          <div class="g4" style="grid-template-columns:repeat(4,1fr);">
+            <div class="wf-amber p4 tc"><div class="text-xs gray">อันดับ 1</div><div class="fw8 text-lg" style="color:#92400e;">฿5,000</div></div>
+            <div class="wf p4 tc"><div class="text-xs gray">อันดับ 2</div><div class="fw8 text-lg">฿2,000</div></div>
+            <div class="wf p4 tc"><div class="text-xs gray">อันดับ 3</div><div class="fw8 text-lg">฿1,000</div></div>
+            <div class="wf-purple p4 tc"><div class="text-xs gray">MVP</div><div class="fw8 text-lg" style="color:#6d28d9;">฿500</div></div>
+          </div>
+        </div>
+
+        <!-- Rules -->
+        <div class="wf p4">
+          <div class="fw7 text-base mb2">📋 กฎกติกา</div>
+          <div class="wf-gray" style="height:120px;display:flex;align-items:center;justify-content:center;color:#64748b;font-size:12px;">Markdown text block — กติกาการแข่งขัน...</div>
+        </div>
+
+        <!-- Map pool -->
+        <div class="wf p4">
+          <div class="fw7 text-base mb2">🗺 Map Pool</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;">
+            <span class="chip chip-gray">Ascent</span><span class="chip chip-gray">Bind</span><span class="chip chip-gray">Haven</span><span class="chip chip-gray">Split</span><span class="chip chip-gray">Icebox</span>
+          </div>
+        </div>
+
+        <!-- Social links -->
+        <div class="wf p4">
+          <div class="fw7 text-base mb2">🔗 ช่องทางติดต่อ</div>
+          <div class="row gap4">
+            <div class="chip chip-blue">Discord Server</div>
+            <div class="chip chip-green">LINE Group</div>
+            <div class="chip chip-red">📺 ถ่ายทอดสด</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT: action sidebar -->
+      <div class="w-80 col gap4">
+        <!-- Registration card -->
+        <div class="wf p4" style="border:2px solid #3b82f6;">
+          <div class="fw8 text-base mb2" style="color:#1d4ed8;">สมัครเข้าร่วม</div>
+          <div class="separator"></div>
+          <div class="g2 mb4">
+            <div class="tc"><div class="text-xs gray">ลงทะเบียนแล้ว</div><div class="fw8 text-xl" style="color:#1e293b;">8</div></div>
+            <div class="tc"><div class="text-xs gray">เหลือที่</div><div class="fw8 text-xl" style="color:#22c55e;">8</div></div>
+          </div>
+          <!-- progress bar -->
+          <div style="background:#e2e8f0;border-radius:99px;height:6px;margin-bottom:16px;"><div style="background:#3b82f6;border-radius:99px;height:6px;width:50%;"></div></div>
+          <div class="btn-mock-primary w-full mb2" style="display:block;text-align:center;padding:10px;">สมัครเข้าร่วม</div>
+          <div class="text-xs gray tc">ต้องเข้าสู่ระบบก่อนสมัคร</div>
+        </div>
+
+        <!-- Payment info -->
+        <div class="wf p4">
+          <div class="fw7 text-base mb2">💳 ช่องทางชำระเงิน</div>
+          <div class="col gap4">
+            <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:6px;padding:10px;">
+              <div class="text-xs fw7" style="color:#166534;">PromptPay</div>
+              <div class="text-xs gray mt2">เบอร์: 08x-xxx-xxxx</div>
+              <div class="text-xs gray">ชื่อบัญชี: นาย ก. ข.</div>
+              <div class="wf-img mt2" style="height:80px;font-size:10px;">QR Code 200×200</div>
+            </div>
+            <div style="background:#eff6ff;border:1px solid #93c5fd;border-radius:6px;padding:10px;">
+              <div class="text-xs fw7" style="color:#1d4ed8;">โอนธนาคาร</div>
+              <div class="text-xs gray mt2">เลขบัญชี: xxx-x-xxxxx-x</div>
+            </div>
+            <div style="background:#fdf4ff;border:1px solid #d8b4fe;border-radius:6px;padding:10px;">
+              <div class="text-xs fw7" style="color:#6d28d9;">TrueWallet</div>
+              <div class="text-xs gray mt2">เบอร์: 08x-xxx-xxxx</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sponsor logos -->
+        <div class="wf p4">
+          <div class="fw7 text-sm mb2">สปอนเซอร์</div>
+          <div class="row gap4 flex-center">
+            <div class="wf-img" style="width:60px;height:40px;font-size:9px;">Logo</div>
+            <div class="wf-img" style="width:60px;height:40px;font-size:9px;">Logo</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     PAGE 4 — REGISTER MODAL
+════════════════════════════════════════════ -->
+<div id="p4" class="screen">
+  <h2 class="page-head"><span class="page-num">4</span> Register Modal (สมัครทัวร์) <span class="dim">Modal: 560 × ~680 px</span></h2>
+
+  <!-- overlay + modal -->
+  <div style="background:#1e293b;padding:40px 24px;min-height:400px;display:flex;align-items:flex-start;justify-content:center;gap:40px;">
+
+    <!-- TEAM MODE modal -->
+    <div style="width:520px;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.4);">
+      <div style="background:#3b82f6;color:#fff;padding:16px 20px;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:space-between;">
+        สมัคร: Valorant Open Cup S1 <span style="cursor:pointer;opacity:.7;">✕</span>
+      </div>
+      <div style="padding:20px;" class="col gap4">
+        <!-- step indicator -->
+        <div class="row gap4" style="border-bottom:1px solid #e2e8f0;padding-bottom:16px;">
+          <div style="flex:1;text-align:center;"><div style="width:24px;height:24px;border-radius:50%;background:#3b82f6;color:#fff;font-size:11px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;margin-bottom:4px;">1</div><div style="font-size:10px;color:#3b82f6;font-weight:700;">ทีม</div></div>
+          <div style="flex:1;text-align:center;"><div style="width:24px;height:24px;border-radius:50%;background:#e2e8f0;color:#94a3b8;font-size:11px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;margin-bottom:4px;">2</div><div style="font-size:10px;color:#94a3b8;font-weight:700;">ชำระเงิน</div></div>
+          <div style="flex:1;text-align:center;"><div style="width:24px;height:24px;border-radius:50%;background:#e2e8f0;color:#94a3b8;font-size:11px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;margin-bottom:4px;">3</div><div style="font-size:10px;color:#94a3b8;font-weight:700;">ยืนยัน</div></div>
+        </div>
+
+        <!-- Step 1: team -->
+        <div>
+          <div style="display:flex;gap:8px;margin-bottom:12px;">
+            <div style="flex:1;border:2px solid #3b82f6;border-radius:8px;padding:10px;text-align:center;font-size:11px;font-weight:700;color:#1d4ed8;background:#dbeafe;">+ สร้างทีมใหม่</div>
+            <div style="flex:1;border:1.5px solid #e2e8f0;border-radius:8px;padding:10px;text-align:center;font-size:11px;font-weight:700;color:#64748b;">เข้าร่วมทีม (มีโค้ด)</div>
+          </div>
+          <div>
+            <div class="label-mock">ชื่อทีม *</div>
+            <div class="input-mock-focus input-mock">ใส่ชื่อทีม...</div>
+          </div>
+          <div class="mt2">
+            <div class="label-mock">โลโก้ทีม (ตัวเลือก)</div>
+            <div class="wf-gray" style="height:64px;border-radius:6px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:11px;color:#64748b;">📎 อัพโหลดรูป หรือใส่ URL</div>
+          </div>
+        </div>
+        <div class="row gap4" style="margin-top:8px;">
+          <div class="btn-mock-secondary flex-1">ยกเลิก</div>
+          <div class="btn-mock-primary flex-1">ถัดไป →</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAYMENT step modal -->
+    <div style="width:520px;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.4);">
+      <div style="background:#3b82f6;color:#fff;padding:16px 20px;font-weight:800;font-size:14px;">สมัคร: Valorant Open Cup S1 — ขั้นตอนที่ 2</div>
+      <div style="padding:20px;" class="col gap4">
+        <div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:6px;padding:12px;font-size:12px;font-weight:700;color:#92400e;text-align:center;">ยอดชำระ: ฿200 · ทีม: Team Alpha</div>
+        <div>
+          <div class="label-mock">ช่องทางชำระเงิน *</div>
+          <div class="select-mock">PromptPay</div>
+        </div>
+        <div>
+          <div class="label-mock">อัพโหลดสลิป *</div>
+          <div class="wf-gray" style="height:80px;border-radius:6px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:11px;color:#64748b;">📸 อัพโหลดรูปสลิป หรือใส่ URL</div>
+        </div>
+        <div>
+          <div class="label-mock">หมายเหตุ (ตัวเลือก)</div>
+          <div class="input-mock">โอนเมื่อ 14:30...</div>
+        </div>
+        <div class="row gap4">
+          <div class="btn-mock-secondary flex-1">← ย้อนกลับ</div>
+          <div class="btn-mock-success flex-1">ส่งสลิป ✓</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="inner">
+    <div class="ann-box">💡 Modal overlay: bg-black/50 · Modal width: 560px · มี scroll เมื่อเนื้อหายาว · Responsive ใน mobile เป็น bottom sheet</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     PAGE 5 — ADMIN DASHBOARD
+════════════════════════════════════════════ -->
+<div id="p5" class="screen">
+  <h2 class="page-head"><span class="page-num">5</span> Admin Dashboard <span class="dim">1440 × ~1600 px</span></h2>
+  <div class="mock-nav"><div class="logo">⚡ RealReal Admin</div><div class="spacer"></div><span class="nav-link" style="color:#f59e0b;">SUPER_ADMIN</span><div class="btn-mock-danger" style="padding:4px 12px;font-size:11px;margin-left:8px;">ออกจากระบบ</div></div>
+
+  <!-- Admin tabs -->
+  <div class="section-title">Tab Bar <span class="dim">1440 × 48 px</span></div>
+  <div style="background:#fff;border-bottom:2px solid #e2e8f0;padding:0 24px;">
+    <div class="tabs" style="border:none;">
+      <div class="tab active">📊 ภาพรวม</div>
+      <div class="tab">🏆 ทัวร์นาเมนต์</div>
+      <div class="tab">💰 สลิปรอ Approve <span class="badge badge-live" style="margin-left:4px;">3</span></div>
+      <div class="tab">🎮 เกม</div>
+    </div>
+  </div>
+
+  <div class="inner">
+
+    <!-- DASHBOARD TAB -->
+    <div class="section-title" style="margin:-24px -24px 24px;border-radius:0;">แท็บ: ภาพรวม</div>
+    <div class="fw8 text-xl mb4">ภาพรวม</div>
+
+    <!-- 4 stat cards -->
+    <div class="g4 mb6" style="grid-template-columns:repeat(4,1fr);margin-bottom:24px;">
+      <div class="stat-card"><div class="stat-icon">🏆</div><div class="stat-val">12</div><div class="stat-label">ทัวร์ทั้งหมด</div></div>
+      <div class="stat-card"><div class="stat-icon">🔴</div><div class="stat-val" style="color:#ef4444;">2</div><div class="stat-label">กำลังแข่ง</div></div>
+      <div class="stat-card"><div class="stat-icon">✅</div><div class="stat-val" style="color:#22c55e;">3</div><div class="stat-label">เปิดรับสมัคร</div></div>
+      <div class="stat-card"><div class="stat-icon">💰</div><div class="stat-val" style="color:#f59e0b;">3</div><div class="stat-label">สลิปรอ Approve</div></div>
+    </div>
+
+    <!-- recent payments -->
+    <div class="wf p4">
+      <div class="fw8 text-base mb4">สลิปรอ Approve ล่าสุด</div>
+      <table>
+        <thead><tr><th>ผู้ใช้</th><th>ทัวร์</th><th>ทีม</th><th>ช่องทาง</th><th>ยอด</th><th style="text-align:right;">Action</th></tr></thead>
+        <tbody>
+          <tr><td><b>นาย_ก</b> <span class="gray text-xs">@nayk</span></td><td>Valorant Open Cup S1</td><td>Team Alpha</td><td>PromptPay</td><td><b>฿200</b></td><td style="text-align:right;"><div class="row" style="justify-content:flex-end;gap:6px;"><div class="btn-mock-success">Approve</div><div class="btn-mock-danger">Reject</div></div></td></tr>
+          <tr><td><b>สาว_ข</b> <span class="gray text-xs">@saok</span></td><td>RoV Championship</td><td>Team Beta</td><td>Bank Transfer</td><td><b>฿100</b></td><td style="text-align:right;"><div class="row" style="justify-content:flex-end;gap:6px;"><div class="btn-mock-success">Approve</div><div class="btn-mock-danger">Reject</div></div></td></tr>
+          <tr><td><b>ด.ช._ค</b> <span class="gray text-xs">@dk</span></td><td>FIFA 26 Pro Series</td><td>—</td><td>TrueWallet</td><td><b>฿300</b></td><td style="text-align:right;"><div class="row" style="justify-content:flex-end;gap:6px;"><div class="btn-mock-success">Approve</div><div class="btn-mock-danger">Reject</div></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- TOURNAMENTS TAB preview -->
+    <div class="section-title" style="margin:-24px -24px 24px;">แท็บ: ทัวร์นาเมนต์</div>
+    <div class="row flex-between mb4">
+      <div class="fw8 text-xl">จัดการทัวร์นาเมนต์</div>
+      <div class="btn-mock-primary">+ สร้างทัวร์ใหม่</div>
+    </div>
+    <div class="wf" style="overflow:hidden;">
+      <table>
+        <thead><tr><th>ชื่อทัวร์</th><th>เกม</th><th>สถานะ</th><th>ผู้เข้าร่วม</th><th style="text-align:right;">Action</th></tr></thead>
+        <tbody>
+          <tr><td><b>Valorant Open Cup S1</b></td><td>🎮 Valorant</td><td><span class="badge badge-open">OPEN ▾</span></td><td class="gray">8 / 16</td><td style="text-align:right;"><div class="row" style="justify-content:flex-end;gap:6px;"><div class="btn-mock-secondary" style="padding:4px 10px;font-size:10px;">ดู</div><div class="btn-mock-primary" style="padding:4px 10px;font-size:10px;">สร้าง Bracket</div></div></td></tr>
+          <tr><td><b>RoV Championship</b></td><td>🎮 RoV</td><td><span class="badge badge-live">LIVE ▾</span></td><td class="gray">16 / 16</td><td style="text-align:right;"><div class="btn-mock-secondary" style="padding:4px 10px;font-size:10px;">ดู</div></td></tr>
+          <tr><td><b>LoL Summer League</b></td><td>🎮 LoL</td><td><span class="badge badge-draft">DRAFT ▾</span></td><td class="gray">0 / 16</td><td style="text-align:right;"><div class="btn-mock-secondary" style="padding:4px 10px;font-size:10px;">ดู</div></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- create tournament modal preview -->
+    <div class="section-title" style="margin:24px -24px 24px;">Modal: สร้างทัวร์ใหม่ <span class="dim">560 × ~560 px</span></div>
+    <div style="max-width:560px;margin:0 auto;">
+      <div class="wf p4">
+        <div class="fw8 text-lg mb4">สร้างทัวร์นาเมนต์ใหม่</div>
+        <div class="col gap4">
+          <div><div class="label-mock">ชื่อทัวร์ *</div><div class="input-mock">ใส่ชื่อทัวร์...</div></div>
+          <div><div class="label-mock">Banner ทัวร์ (ตัวเลือก)</div><div class="wf-gray" style="height:56px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#64748b;">อัพโหลดรูป หรือ URL · แนะนำ 1200×400 px</div></div>
+          <div><div class="label-mock">เกม *</div><div class="input-mock">Valorant</div></div>
+          <div class="g2">
+            <div><div class="label-mock">Format</div><div class="select-mock">Single Elimination</div></div>
+            <div><div class="label-mock">จำนวนสูงสุด</div><div class="input-mock">16</div></div>
+          </div>
+          <div class="g2">
+            <div><div class="label-mock">ค่าสมัคร (฿)</div><div class="input-mock">200</div></div>
+            <div><div class="label-mock">ขนาดทีม</div><div class="input-mock">5</div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;"><div style="width:16px;height:16px;border-radius:3px;background:#3b82f6;border:1px solid #2563eb;"></div><div style="font-size:12px;font-weight:700;color:#475569;">แข่งแบบทีม</div></div>
+          <div class="row gap4">
+            <div class="btn-mock-secondary flex-1">ยกเลิก</div>
+            <div class="btn-mock-primary flex-1">สร้างทัวร์</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     PAGE 6 — LOGIN / REGISTER
+════════════════════════════════════════════ -->
+<div id="p6" class="screen">
+  <h2 class="page-head"><span class="page-num">6</span> Login / Register <span class="dim">1440 × 100vh (full screen)</span></h2>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;min-height:500px;">
+
+    <!-- LOGIN -->
+    <div style="background:linear-gradient(135deg,#fef9ee,#fff);border-right:1px solid #e2e8f0;display:flex;align-items:center;justify-content:center;padding:40px;">
+      <div style="width:400px;">
+        <div class="tc mb4"><div style="font-size:28px;margin-bottom:8px;">⚡</div><div class="fw8 text-xl">เข้าสู่ระบบ</div><div class="text-xs gray mt2">ยินดีต้อนรับกลับสู่ RealReal</div></div>
+        <div class="col gap4">
+          <div><div class="label-mock">อีเมล *</div><div class="input-mock">email@example.com</div></div>
+          <div><div class="label-mock">รหัสผ่าน *</div><div class="input-mock">••••••••</div></div>
+          <div class="btn-mock-primary" style="text-align:center;padding:10px;">เข้าสู่ระบบ</div>
+          <div class="tc text-xs gray">ยังไม่มีบัญชี? <span style="color:#3b82f6;font-weight:700;cursor:pointer;">สมัครสมาชิกฟรี</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- REGISTER -->
+    <div style="background:#fff;display:flex;align-items:center;justify-content:center;padding:40px;">
+      <div style="width:400px;">
+        <div class="tc mb4"><div style="font-size:28px;margin-bottom:8px;">⚡</div><div class="fw8 text-xl">สมัครสมาชิก</div><div class="text-xs gray mt2">เริ่มต้นใช้งาน RealReal ฟรี</div></div>
+        <div class="col gap4">
+          <div><div class="label-mock">อีเมล *</div><div class="input-mock">email@example.com</div></div>
+          <div><div class="label-mock">Username * <span style="font-size:10px;color:#94a3b8;">(ตัวอักษรและตัวเลขเท่านั้น)</span></div><div class="input-mock">cool_gamer</div></div>
+          <div><div class="label-mock">Display Name <span style="font-size:10px;color:#94a3b8;">(ตัวเลือก)</span></div><div class="input-mock">นายเกม คนเก่ง</div></div>
+          <div><div class="label-mock">รหัสผ่าน * <span style="font-size:10px;color:#94a3b8;">(อย่างน้อย 8 ตัว)</span></div><div class="input-mock">••••••••</div></div>
+          <div class="btn-mock-primary" style="text-align:center;padding:10px;">สมัครสมาชิก</div>
+          <div class="tc text-xs gray">มีบัญชีแล้ว? <span style="color:#3b82f6;font-weight:700;cursor:pointer;">เข้าสู่ระบบ</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     PAGE 7 — PROFILE
+════════════════════════════════════════════ -->
+<div id="p7" class="screen">
+  <h2 class="page-head"><span class="page-num">7</span> User Profile <span class="dim">1440 × ~1200 px</span></h2>
+  <div class="mock-nav"><div class="logo">⚡ RealReal</div><div class="spacer"></div><div class="btn-mock-secondary" style="padding:4px 12px;font-size:11px;">นาย_ก</div></div>
+
+  <div class="inner">
+    <div class="row gap6">
+      <!-- LEFT: avatar + basic info -->
+      <div class="w-64 col gap4">
+        <div class="wf p4 tc">
+          <div class="wf-img" style="width:96px;height:96px;border-radius:50%;margin:0 auto 12px;font-size:11px;">Avatar<br>96×96</div>
+          <div class="fw8 text-lg">นาย_ก</div>
+          <div class="text-xs gray mt2">@nayk</div>
+          <div class="mt2"><span class="chip chip-blue">PLAYER</span></div>
+          <div class="separator"></div>
+          <div class="text-xs gray">สมัครเมื่อ: 1 ม.ค. 2026</div>
+          <div class="btn-mock-secondary w-full mt4" style="font-size:11px;padding:8px;">แก้ไขโปรไฟล์</div>
+        </div>
+      </div>
+
+      <!-- RIGHT: edit form + history -->
+      <div class="flex-1 col gap4">
+
+        <!-- edit form -->
+        <div class="wf p4">
+          <div class="fw8 text-base mb4">✏️ แก้ไขข้อมูลส่วนตัว</div>
+          <div class="g2 gap4">
+            <div><div class="label-mock">Display Name</div><div class="input-mock">นาย_ก</div></div>
+            <div><div class="label-mock">เบอร์โทรศัพท์</div><div class="input-mock">08x-xxx-xxxx</div></div>
+            <div><div class="label-mock">Discord ID</div><div class="input-mock">nayk#1234</div></div>
+            <div><div class="label-mock">Line ID</div><div class="input-mock">@nayk</div></div>
+          </div>
+          <div class="mt4"><div class="label-mock">รูปโปรไฟล์</div><div class="wf-gray" style="height:48px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#64748b;">อัพโหลดรูป หรือใส่ URL</div></div>
+          <div class="row flex-end mt4 gap4">
+            <div class="btn-mock-secondary">ยกเลิก</div>
+            <div class="btn-mock-primary">บันทึก</div>
+          </div>
+        </div>
+
+        <!-- tournament history -->
+        <div class="wf p4">
+          <div class="fw8 text-base mb4">🏆 ประวัติการแข่งขัน</div>
+          <table>
+            <thead><tr><th>ทัวร์นาเมนต์</th><th>เกม</th><th>ทีม</th><th>สถานะ</th><th>ผล</th></tr></thead>
+            <tbody>
+              <tr><td>Valorant Open Cup S1</td><td>Valorant</td><td>Team Alpha</td><td><span class="badge badge-open">CONFIRMED</span></td><td class="gray">—</td></tr>
+              <tr><td>RoV Championship</td><td>RoV</td><td>Team Beta</td><td><span class="badge badge-closed">FINISHED</span></td><td><span class="chip chip-amber">อันดับ 3</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- change password -->
+        <div class="wf p4">
+          <div class="fw8 text-base mb4">🔒 เปลี่ยนรหัสผ่าน</div>
+          <div class="col gap4">
+            <div><div class="label-mock">รหัสผ่านเดิม *</div><div class="input-mock">••••••••</div></div>
+            <div><div class="label-mock">รหัสผ่านใหม่ *</div><div class="input-mock">••••••••</div></div>
+            <div><div class="label-mock">ยืนยันรหัสผ่านใหม่ *</div><div class="input-mock">••••••••</div></div>
+            <div class="row flex-end"><div class="btn-mock-primary">เปลี่ยนรหัสผ่าน</div></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     PAGE 8 — COMPONENTS / DESIGN TOKENS
+════════════════════════════════════════════ -->
+<div id="p8" class="screen">
+  <h2 class="page-head"><span class="page-num">8</span> Design Tokens &amp; Components</h2>
+  <div class="inner">
+    <div class="g2 gap6">
+
+      <!-- Colors -->
+      <div>
+        <div class="fw8 text-base mb4">🎨 Color Palette</div>
+        <div class="col gap4">
+          <div>
+            <div class="label-mock mb2">Primary (ปรับได้ต่อทัวร์)</div>
+            <div class="row gap4">
+              <div style="width:48px;height:48px;background:#3b82f6;border-radius:8px;"></div>
+              <div style="width:48px;height:48px;background:#7c3aed;border-radius:8px;"></div>
+              <div><div class="text-xs fw7">#3b82f6</div><div class="text-xs gray">Blue 500</div></div>
+              <div><div class="text-xs fw7">#7c3aed</div><div class="text-xs gray">Violet 700</div></div>
+            </div>
+          </div>
+          <div>
+            <div class="label-mock mb2">Brand / UI Theme</div>
+            <div class="row gap4" style="flex-wrap:wrap;">
+              <div style="text-align:center;"><div style="width:40px;height:40px;background:#f59e0b;border-radius:6px;margin:0 auto 4px;"></div><div style="font-size:9px;color:#64748b;">Amber 500</div></div>
+              <div style="text-align:center;"><div style="width:40px;height:40px;background:#f97316;border-radius:6px;margin:0 auto 4px;"></div><div style="font-size:9px;color:#64748b;">Orange 500</div></div>
+              <div style="text-align:center;"><div style="width:40px;height:40px;background:#fef9ee;border-radius:6px;border:1px solid #e8dcb8;margin:0 auto 4px;"></div><div style="font-size:9px;color:#64748b;">Cream BG</div></div>
+              <div style="text-align:center;"><div style="width:40px;height:40px;background:#1e293b;border-radius:6px;margin:0 auto 4px;"></div><div style="font-size:9px;color:#64748b;">Slate 800</div></div>
+              <div style="text-align:center;"><div style="width:40px;height:40px;background:#292524;border-radius:6px;margin:0 auto 4px;"></div><div style="font-size:9px;color:#64748b;">Stone 800</div></div>
+            </div>
+          </div>
+          <div>
+            <div class="label-mock mb2">Status Colors</div>
+            <div class="row gap4">
+              <div class="chip chip-green">เปิดรับสมัคร</div>
+              <div class="chip chip-red">กำลังแข่ง</div>
+              <div class="chip chip-gray">ปิด/จบ</div>
+              <div class="chip chip-amber">DRAFT</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Typography -->
+      <div>
+        <div class="fw8 text-base mb4">✍️ Typography</div>
+        <div class="col gap4">
+          <div class="wf p4">
+            <div style="font-family:'Chakra Petch',sans-serif;font-size:28px;font-weight:900;color:#1e293b;">Chakra Petch — Heading</div>
+            <div class="text-xs gray mt2">font-head · ใช้กับ: หัวข้อหน้า, ชื่อทัวร์, ตัวเลขสถิติ</div>
+          </div>
+          <div class="wf p4">
+            <div style="font-family:'IBM Plex Sans Thai',sans-serif;font-size:16px;color:#334155;">IBM Plex Sans Thai — Body</div>
+            <div class="text-xs gray mt2">font-body · ใช้กับ: ข้อความทั่วไป, คำอธิบาย, กฎกติกา</div>
+          </div>
+          <div class="wf p4">
+            <div class="col gap4">
+              <div style="font-size:36px;font-weight:900;color:#1e293b;">H1: 36px 900</div>
+              <div style="font-size:28px;font-weight:800;color:#1e293b;">H2: 28px 800</div>
+              <div style="font-size:22px;font-weight:700;color:#1e293b;">H3: 22px 700</div>
+              <div style="font-size:16px;font-weight:600;color:#334155;">H4: 16px 600</div>
+              <div style="font-size:14px;color:#475569;">Body: 14px 400</div>
+              <div style="font-size:12px;color:#64748b;">Caption: 12px 400</div>
+              <div style="font-size:10px;color:#94a3b8;">Label: 10px 700 UPPERCASE</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Buttons -->
+      <div>
+        <div class="fw8 text-base mb4">🔘 Buttons</div>
+        <div class="col gap4">
+          <div class="wf p4">
+            <div class="label-mock mb2">Sizes</div>
+            <div class="row gap4" style="align-items:center;">
+              <div class="btn-mock-primary" style="padding:6px 14px;font-size:11px;">Small</div>
+              <div class="btn-mock-primary" style="padding:8px 20px;font-size:13px;">Medium</div>
+              <div class="btn-mock-primary" style="padding:12px 28px;font-size:15px;">Large</div>
+            </div>
+          </div>
+          <div class="wf p4">
+            <div class="label-mock mb2">Variants</div>
+            <div class="row gap4" style="flex-wrap:wrap;">
+              <div class="btn-mock-primary">Primary</div>
+              <div class="btn-mock-secondary">Secondary</div>
+              <div class="btn-mock-success">Success</div>
+              <div class="btn-mock-danger">Danger</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Form elements -->
+      <div>
+        <div class="fw8 text-base mb4">📝 Form Elements</div>
+        <div class="col gap4">
+          <div class="wf p4">
+            <div class="label-mock">Input — height: 36px · radius: 6px · border: 1.5px #e2e8f0</div>
+            <div class="input-mock mt2">Placeholder text</div>
+            <div class="input-mock-focus input-mock mt2" style="margin-top:8px;">Focus state — border: #3b82f6</div>
+          </div>
+          <div class="wf p4">
+            <div class="label-mock">Select Dropdown</div>
+            <div class="select-mock mt2">ตัวเลือก</div>
+          </div>
+          <div class="wf p4">
+            <div class="label-mock">Textarea — กฎกติกา</div>
+            <div class="wf-gray" style="height:80px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#64748b;">Multiline text area · min-height: 120px</div>
+          </div>
+          <div class="wf p4">
+            <div class="label-mock">Checkbox + Toggle</div>
+            <div class="row gap4 mt2" style="align-items:center;">
+              <div style="display:flex;align-items:center;gap:6px;"><div style="width:16px;height:16px;border-radius:3px;background:#3b82f6;border:1px solid #2563eb;"></div><div style="font-size:12px;">Checked</div></div>
+              <div style="display:flex;align-items:center;gap:6px;"><div style="width:16px;height:16px;border-radius:3px;border:1.5px solid #cbd5e1;"></div><div style="font-size:12px;">Unchecked</div></div>
+              <div style="background:#3b82f6;width:36px;height:20px;border-radius:10px;display:flex;align-items:center;padding:2px;"><div style="width:16px;height:16px;background:#fff;border-radius:50%;margin-left:auto;"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cards -->
+      <div>
+        <div class="fw8 text-base mb4">🃏 Cards</div>
+        <div class="col gap4">
+          <div class="wf p4">
+            <div class="label-mock mb2">.card — white · border: 1.5px #e2e8f0 · radius: 10px · shadow: sm</div>
+            <div style="border:1.5px solid #e2e8f0;border-radius:10px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.06);">
+              <div class="fw7">ตัวอย่าง Card</div>
+              <div class="text-xs gray mt2">เนื้อหาในการ์ด...</div>
+            </div>
+          </div>
+          <div class="wf p4">
+            <div class="label-mock mb2">Stat Card — ใช้ใน Admin</div>
+            <div class="stat-card">
+              <div class="stat-icon">🏆</div>
+              <div class="stat-val">12</div>
+              <div class="stat-label">ทัวร์ทั้งหมด</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Toast / Badges / Misc -->
+      <div>
+        <div class="fw8 text-base mb4">🔔 Feedback &amp; Badges</div>
+        <div class="col gap4">
+          <div class="wf p4">
+            <div class="label-mock mb2">Toast Notifications — bottom-right · 300ms animation</div>
+            <div class="col gap4">
+              <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:10px 16px;display:flex;gap:10px;align-items:center;font-size:12px;"><span>✅</span><span class="fw7" style="color:#166534;">Approve สลิปแล้ว</span></div>
+              <div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:10px 16px;display:flex;gap:10px;align-items:center;font-size:12px;"><span>❌</span><span class="fw7" style="color:#991b1b;">ดำเนินการไม่สำเร็จ</span></div>
+              <div style="background:#eff6ff;border:1px solid #93c5fd;border-radius:8px;padding:10px 16px;display:flex;gap:10px;align-items:center;font-size:12px;"><span>ℹ️</span><span class="fw7" style="color:#1d4ed8;">กำลังโหลดข้อมูล...</span></div>
+            </div>
+          </div>
+          <div class="wf p4">
+            <div class="label-mock mb2">Status Badges</div>
+            <div class="row gap4" style="flex-wrap:wrap;">
+              <span class="badge badge-open">เปิดรับสมัคร</span>
+              <span class="badge badge-live">กำลังแข่ง</span>
+              <span class="badge badge-closed">ปิดรับสมัคร</span>
+              <span class="badge badge-closed">จบแล้ว</span>
+              <span class="badge badge-draft">DRAFT</span>
+              <span class="badge badge-closed">CANCELLED</span>
+            </div>
+          </div>
+          <div class="wf p4">
+            <div class="label-mock mb2">Loading Skeleton — 3 สี pulse animation</div>
+            <div class="col gap4">
+              <div style="height:16px;background:linear-gradient(90deg,#e2e8f0 25%,#f1f5f9 50%,#e2e8f0 75%);border-radius:4px;animation:pulse 1.5s infinite;"></div>
+              <div style="height:12px;background:linear-gradient(90deg,#e2e8f0 25%,#f1f5f9 50%,#e2e8f0 75%);border-radius:4px;width:60%;"></div>
+              <div style="height:96px;background:#e2e8f0;border-radius:8px;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Responsive breakpoints -->
+    <div class="separator"></div>
+    <div class="fw8 text-base mb4">📐 Breakpoints &amp; Grid</div>
+    <div class="g4" style="grid-template-columns:repeat(4,1fr);">
+      <div class="wf-blue p4 tc"><div class="fw8">Mobile</div><div class="text-xs gray mt2">< 640px<br>1 column<br>padding: 16px</div></div>
+      <div class="wf-amber p4 tc"><div class="fw8">Tablet (sm)</div><div class="text-xs gray mt2">640px – 1024px<br>2 columns<br>padding: 20px</div></div>
+      <div class="wf-green p4 tc"><div class="fw8">Desktop (lg)</div><div class="text-xs gray mt2">1024px – 1280px<br>3 columns<br>padding: 24px</div></div>
+      <div class="wf-purple p4 tc"><div class="fw8">Wide (xl)</div><div class="text-xs gray mt2">≥ 1280px<br>max-width: 1280px<br>centered</div></div>
+    </div>
+
+    <div class="separator"></div>
+    <div class="fw8 text-base mb4">📏 Spacing Scale (Tailwind)</div>
+    <div class="row gap4" style="flex-wrap:wrap;align-items:flex-end;">
+      <div class="tc"><div style="width:4px;height:4px;background:#3b82f6;margin:0 auto 4px;"></div><div style="font-size:9px;color:#64748b;">4px</div></div>
+      <div class="tc"><div style="width:8px;height:8px;background:#3b82f6;margin:0 auto 4px;"></div><div style="font-size:9px;color:#64748b;">8px</div></div>
+      <div class="tc"><div style="width:12px;height:12px;background:#3b82f6;margin:0 auto 4px;"></div><div style="font-size:9px;color:#64748b;">12px</div></div>
+      <div class="tc"><div style="width:16px;height:16px;background:#3b82f6;margin:0 auto 4px;"></div><div style="font-size:9px;color:#64748b;">16px</div></div>
+      <div class="tc"><div style="width:24px;height:24px;background:#3b82f6;margin:0 auto 4px;"></div><div style="font-size:9px;color:#64748b;">24px</div></div>
+      <div class="tc"><div style="width:32px;height:32px;background:#3b82f6;margin:0 auto 4px;"></div><div style="font-size:9px;color:#64748b;">32px</div></div>
+      <div class="tc"><div style="width:48px;height:48px;background:#3b82f6;margin:0 auto 4px;"></div><div style="font-size:9px;color:#64748b;">48px</div></div>
+      <div class="tc"><div style="width:64px;height:64px;background:#3b82f6;margin:0 auto 4px;"></div><div style="font-size:9px;color:#64748b;">64px</div></div>
+    </div>
+
+  </div>
+</div>
+
+</div><!-- /page-wrap -->
+
+<style>
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+</style>
+</body>
+</html>

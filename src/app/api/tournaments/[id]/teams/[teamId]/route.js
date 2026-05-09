@@ -32,9 +32,8 @@ export async function DELETE(request, { params }) {
     await requireAdmin()
     const { id, teamId } = await params
 
-    // Delete in order: TeamMember → Registration → Team (cascade handles Match refs)
+    // Delete in order: TeamMember → Team
     await supabase.from('TeamMember').delete().eq('teamId', teamId)
-    await supabase.from('Registration').delete().eq('teamId', teamId).eq('tournamentId', id)
     const { error } = await supabase.from('Team').delete().eq('id', teamId).eq('tournamentId', id)
     if (error) throw error
 

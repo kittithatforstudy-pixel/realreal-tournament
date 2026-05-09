@@ -14,19 +14,16 @@ export async function POST(request, { params }) {
 
     let participants
     if (tournament.teamMode) {
-      // Only teams whose registration is CONFIRMED
-      const { data: confirmedRegs } = await supabase
-        .from('Registration')
-        .select('teamId')
+      // Use all teams in the tournament directly
+      const { data: teams } = await supabase
+        .from('Team')
+        .select('*')
         .eq('tournamentId', id)
-        .eq('status', 'CONFIRMED')
-        .not('teamId', 'is', null)
-      const teamIds = (confirmedRegs || []).map(r => r.teamId)
-      if (teamIds.length === 0) {
-        return NextResponse.json({ error: 'ต้องมีทีมที่ยืนยันแล้วอย่างน้อย 2 ทีม' }, { status: 400 })
+        .order('createdAt')
+      if (!teams || teams.length < 2) {
+        return NextResponse.json({ error: 'ต้องมีทีมอย่างน้อย 2 ทีม' }, { status: 400 })
       }
-      const { data: teams } = await supabase.from('Team').select('*').in('id', teamIds)
-      participants = teams || []
+      participants = teams
     } else {
       const { data: regs } = await supabase
         .from('Registration')

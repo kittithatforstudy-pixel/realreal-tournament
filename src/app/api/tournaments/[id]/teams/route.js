@@ -37,18 +37,6 @@ export async function POST(request, { params }) {
       .single()
     if (teamError) throw teamError
 
-    // Create Registration (CONFIRMED) so the team is eligible for bracket
-    const { error: regError } = await supabase
-      .from('Registration')
-      .insert({ id: crypto.randomUUID(), tournamentId: id, userId: admin.userId, teamId: team.id, status: 'CONFIRMED' })
-    if (regError) {
-      await supabase.from('Team').delete().eq('id', team.id)
-      throw regError
-    }
-
-    // Add admin as LEADER member
-    await supabase.from('TeamMember').insert({ teamId: team.id, userId: admin.userId, role: 'LEADER' })
-
     return NextResponse.json(team, { status: 201 })
   } catch (error) {
     if (error.message === 'Forbidden') return NextResponse.json({ error: 'ไม่มีสิทธิ์' }, { status: 403 })

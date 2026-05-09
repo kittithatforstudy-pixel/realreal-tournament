@@ -121,7 +121,7 @@ export default function HomePage() {
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
           <div>
             <h2 className="font-head text-2xl md:text-3xl font-bold text-gray-900">🏆 ทัวร์นาเมนต์</h2>
-            <p className="text-gray-500 text-sm mt-1">เลือกทัวร์ที่คุณสนใจและสมัครได้เลย</p>
+            <p className="text-gray-500 text-sm mt-1">คลิกดู bracket และผลการแข่งขัน real-time</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <select

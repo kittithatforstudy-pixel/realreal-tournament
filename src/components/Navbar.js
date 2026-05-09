@@ -58,7 +58,6 @@ export default function Navbar({ variant = 'default' }) {
 
           <div className="hidden md:flex items-center gap-6">
             <Link href="/tournaments" className={linkClasses}>ทัวร์นาเมนต์</Link>
-            {user && <Link href="/profile" className={linkClasses}>โปรไฟล์</Link>}
             {isAdmin && <Link href="/admin" className={linkClasses}>Admin</Link>}
           </div>
 
@@ -85,7 +84,6 @@ export default function Navbar({ variant = 'default' }) {
         {menuOpen && (
           <div className={`md:hidden py-3 border-t space-y-1 ${dark ? 'border-gray-700' : 'border-gray-100'}`}>
             <Link href="/tournaments" className={`block px-2 py-2 rounded ${dark ? 'text-gray-200 hover:bg-gray-800' : 'text-gray-700 hover:bg-gray-50'}`}>ทัวร์นาเมนต์</Link>
-            {user && <Link href="/profile" className={`block px-2 py-2 rounded ${dark ? 'text-gray-200 hover:bg-gray-800' : 'text-gray-700 hover:bg-gray-50'}`}>โปรไฟล์</Link>}
             {isAdmin && <Link href="/admin" className={`block px-2 py-2 rounded ${dark ? 'text-gray-200 hover:bg-gray-800' : 'text-gray-700 hover:bg-gray-50'}`}>Admin</Link>}
             <div className={`pt-2 mt-2 border-t ${dark ? 'border-gray-700' : 'border-gray-100'}`}>
               {!loading && (user ? (

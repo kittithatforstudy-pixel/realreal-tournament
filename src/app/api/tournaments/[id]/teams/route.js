@@ -30,10 +30,9 @@ export async function POST(request, { params }) {
     }
 
     // Create Team
-    const teamId = crypto.randomUUID()
     const { data: team, error: teamError } = await supabase
       .from('Team')
-      .insert({ id: teamId, name: name.trim(), tournamentId: id, leaderId: admin.userId, inviteCode: crypto.randomUUID() })
+      .insert({ id: crypto.randomUUID(), name: name.trim(), tournamentId: id, leaderId: admin.userId, inviteCode: crypto.randomUUID() })
       .select('id, name, createdAt')
       .single()
     if (teamError) throw teamError

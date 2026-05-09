@@ -78,7 +78,9 @@ export async function POST() {
         id: 'main',
         platformName: 'RealReal Tournament',
         tagline: 'จัดทัวร์นาเมนต์ยังไงก็ได้',
-        logoIcon: '⚡'
+        logoIcon: '⚡',
+        discordServerLink: null,
+        registrationFormUrl: null
       })
     }
 

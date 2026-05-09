@@ -20,18 +20,24 @@ export default function AdminPage() {
   const [createForm, setCreateForm] = useState({ name: '', gameName: '', banner: '', format: 'SINGLE_ELIM', maxParticipants: 16, entryFee: 0, teamMode: true, teamSize: 5 })
   const [createMsg, setCreateMsg] = useState('')
 
+  // Platform settings
+  const [settings, setSettings] = useState({ discordServerLink: '', registrationFormUrl: '' })
+  const [settingsSaving, setSettingsSaving] = useState(false)
+
   useEffect(() => {
     Promise.all([
       fetch('/api/tournaments?all=1').then(r => r.json()),
       fetch('/api/payments/pending').then(r => r.json()),
       fetch('/api/games').then(r => r.json()),
-    ]).then(([t, p, g]) => {
+      fetch('/api/platform-settings').then(r => r.ok ? r.json() : {}),
+    ]).then(([t, p, g, s]) => {
       if (!Array.isArray(p)) {
         setError('ไม่สามารถโหลดข้อมูลได้ กรุณาเข้าสู่ระบบด้วยบัญชี Admin')
       }
       setTournaments(Array.isArray(t) ? t : [])
       setPayments(Array.isArray(p) ? p : [])
       setGames(Array.isArray(g) ? g : [])
+      setSettings({ discordServerLink: s?.discordServerLink || '', registrationFormUrl: s?.registrationFormUrl || '' })
       setLoading(false)
     }).catch(() => {
       setError('ไม่สามารถโหลดข้อมูลได้ กรุณาเข้าสู่ระบบด้วยบัญชี Admin')
@@ -99,6 +105,23 @@ export default function AdminPage() {
     }
   }
 
+  async function handleSaveSettings(e) {
+    e.preventDefault()
+    setSettingsSaving(true)
+    const res = await fetch('/api/platform-settings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(settings)
+    })
+    if (res.ok) {
+      toast.show('บันทึกการตั้งค่าแล้ว', 'success')
+    } else {
+      const d = await res.json().catch(() => ({}))
+      toast.show(d.error || 'บันทึกไม่สำเร็จ', 'error')
+    }
+    setSettingsSaving(false)
+  }
+
   async function handleDeleteTournament(tournamentId, name) {
     if (!confirm(`ลบทัวร์ "${name}" ใช่ไหม?\n\nการกระทำนี้ไม่สามารถย้อนกลับได้`)) return
     const res = await fetch(`/api/tournaments/${tournamentId}`, { method: 'DELETE' })
@@ -139,6 +162,7 @@ export default function AdminPage() {
               { key: 'tournaments', label: '🏆 ทัวร์นาเมนต์' },
               { key: 'payments', label: `💰 สลิปรอ Approve${payments.length > 0 ? ` (${payments.length})` : ''}` },
               { key: 'games', label: '🎮 เกม' },
+              { key: 'settings', label: '⚙️ ตั้งค่า' },
             ].map(t => (
               <button
                 key={t.key}
@@ -289,6 +313,43 @@ export default function AdminPage() {
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {/* SETTINGS */}
+        {tab === 'settings' && (
+          <div className="max-w-lg">
+            <h1 className="font-head text-2xl font-bold mb-6">ตั้งค่าเว็บไซต์</h1>
+            <form onSubmit={handleSaveSettings} className="card p-6 space-y-5">
+              <div>
+                <label className="label">ลิงก์ Discord Server</label>
+                <input
+                  type="url"
+                  className="input"
+                  placeholder="https://discord.gg/..."
+                  value={settings.discordServerLink}
+                  onChange={e => setSettings(s => ({ ...s, discordServerLink: e.target.value }))}
+                />
+                <p className="text-xs text-gray-400 mt-1">จะแสดงเป็นปุ่ม "เข้า Discord Server" ในหน้า Login</p>
+              </div>
+              <div>
+                <label className="label">ลิงก์ฟอร์มสมัครทัวร์</label>
+                <input
+                  type="url"
+                  className="input"
+                  placeholder="https://forms.gle/... หรือ bit.ly/..."
+                  value={settings.registrationFormUrl}
+                  onChange={e => setSettings(s => ({ ...s, registrationFormUrl: e.target.value }))}
+                />
+                <p className="text-xs text-gray-400 mt-1">จะแสดงเป็นปุ่ม "ฟอร์มสมัครทัวร์" ในหน้า Login</p>
+              </div>
+              <div className="pt-2">
+                <button type="submit" className="btn-primary w-full" disabled={settingsSaving}>
+                  {settingsSaving ? 'กำลังบันทึก...' : 'บันทึกการตั้งค่า'}
+                </button>
+              </div>
+              <p className="text-xs text-gray-400">ปล่อยว่างไว้ถ้าไม่ต้องการแสดงปุ่มนั้น</p>
+            </form>
           </div>
         )}
 

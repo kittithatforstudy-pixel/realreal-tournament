@@ -326,6 +326,8 @@ model PlatformSettings {
   bankDefault     String?
   truewalletDefault String?
   discordWebhookDefault String?
+  discordServerLink String?
+  registrationFormUrl String?
   language        String  @default("th")
   customDomain    String?
 }

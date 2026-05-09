@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useToast } from '@/components/Toast'
@@ -9,6 +9,14 @@ export default function LoginPage() {
   const router = useRouter()
   const toast = useToast()
   const [form, setForm] = useState({ email: '', password: '' })
+  const [platformLinks, setPlatformLinks] = useState({ discordServerLink: null, registrationFormUrl: null })
+
+  useEffect(() => {
+    fetch('/api/platform-settings')
+      .then(r => r.ok ? r.json() : {})
+      .then(d => setPlatformLinks(d))
+      .catch(() => {})
+  }, [])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
@@ -106,12 +114,31 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <p className="text-center text-sm text-gray-500 mt-6">
-            ยังไม่มีบัญชี?{' '}
-            <Link href="/auth/register" className="text-blue-500 hover:text-blue-600 font-semibold">
-              สมัครสมาชิก
-            </Link>
-          </p>
+          {(platformLinks.discordServerLink || platformLinks.registrationFormUrl) && (
+            <div className="mt-6 pt-6 border-t border-gray-100 space-y-2">
+              <p className="text-xs text-gray-400 text-center mb-3">สนใจเข้าร่วมทัวร์?</p>
+              {platformLinks.discordServerLink && (
+                <a
+                  href={platformLinks.discordServerLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-700 text-sm font-semibold hover:bg-indigo-100 transition-colors"
+                >
+                  💬 เข้า Discord Server
+                </a>
+              )}
+              {platformLinks.registrationFormUrl && (
+                <a
+                  href={platformLinks.registrationFormUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-lg border border-amber-200 bg-amber-50 text-amber-700 text-sm font-semibold hover:bg-amber-100 transition-colors"
+                >
+                  📋 ฟอร์มสมัครทัวร์
+                </a>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </main>

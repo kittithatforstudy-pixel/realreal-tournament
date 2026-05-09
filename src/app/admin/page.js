@@ -33,6 +33,13 @@ export default function AdminPage() {
   const [editingTeam, setEditingTeam] = useState(null) // { id, name }
   const [editTeamName, setEditTeamName] = useState('')
 
+  // Match score modal
+  const [matchModal, setMatchModal] = useState(null) // { tournamentId, tournamentName }
+  const [matchData, setMatchData] = useState([])
+  const [matchesLoading, setMatchesLoading] = useState(false)
+  const [editingMatch, setEditingMatch] = useState(null)
+  const [savingScore, setSavingScore] = useState(false)
+
   useEffect(() => {
     Promise.all([
       fetch('/api/tournaments?all=1').then(r => r.json()),
@@ -192,6 +199,43 @@ export default function AdminPage() {
     }
   }
 
+  async function openMatchModal(tournament) {
+    setMatchModal({ tournamentId: tournament.id, tournamentName: tournament.name })
+    setMatchesLoading(true)
+    setEditingMatch(null)
+    const res = await fetch(`/api/tournaments/${tournament.id}`)
+    const data = await res.json()
+    setMatchData(data.matches || [])
+    setMatchesLoading(false)
+  }
+
+  async function handleSaveScore(e) {
+    e.preventDefault()
+    if (!editingMatch.winnerId) { toast.show('กรุณาเลือกผู้ชนะ', 'error'); return }
+    setSavingScore(true)
+    const res = await fetch(`/api/tournaments/${matchModal.tournamentId}/bracket`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        matchId: editingMatch.id,
+        scoreA: Number(editingMatch.scoreA),
+        scoreB: Number(editingMatch.scoreB),
+        winnerId: editingMatch.winnerId
+      })
+    })
+    const data = await res.json()
+    if (res.ok) {
+      const r2 = await fetch(`/api/tournaments/${matchModal.tournamentId}`)
+      const d2 = await r2.json()
+      setMatchData(d2.matches || [])
+      setEditingMatch(null)
+      toast.show('บันทึกผลแล้ว', 'success')
+    } else {
+      toast.show(data.error || 'บันทึกผลไม่สำเร็จ', 'error')
+    }
+    setSavingScore(false)
+  }
+
   async function handleDeleteTournament(tournamentId, name) {
     if (!confirm(`ลบทัวร์ "${name}" ใช่ไหม?\n\nการกระทำนี้ไม่สามารถย้อนกลับได้`)) return
     const res = await fetch(`/api/tournaments/${tournamentId}`, { method: 'DELETE' })
@@ -332,11 +376,16 @@ export default function AdminPage() {
                       </td>
                       <td className="px-4 py-3 text-gray-500">{t._count?.teams ?? 0} / {t.maxParticipants}</td>
                       <td className="px-4 py-3 text-right">
-                        <div className="flex justify-end gap-2">
+                        <div className="flex justify-end gap-2 flex-wrap">
                           <Link href={`/tournaments/${t.id}`} className="btn-secondary text-xs py-1 px-2">ดู</Link>
                           <button onClick={() => openTeamModal(t)} className="btn-secondary text-xs py-1 px-2">👥 ทีม</button>
-                          {(t.status === 'CLOSED' || t.status === 'OPEN') && (
-                            <button onClick={() => handleGenerateBracket(t.id)} className="btn-primary text-xs py-1 px-2">สร้าง Bracket</button>
+                          {t.status === 'LIVE' && (
+                            <button onClick={() => openMatchModal(t)} className="btn-success text-xs py-1 px-2">📊 ผล</button>
+                          )}
+                          {(t.status === 'CLOSED' || t.status === 'OPEN' || t.status === 'LIVE') && (
+                            <button onClick={() => handleGenerateBracket(t.id)} className="btn-primary text-xs py-1 px-2">
+                              {t.status === 'LIVE' ? '🔄 Bracket ใหม่' : 'สร้าง Bracket'}
+                            </button>
                           )}
                           <button onClick={() => handleDeleteTournament(t.id, t.name)} className="btn-danger text-xs py-1 px-2">ลบ</button>
                         </div>
@@ -505,6 +554,113 @@ export default function AdminPage() {
                         >ลบ</button>
                       </>
                     )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Match Score Modal */}
+      {matchModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4 overflow-y-auto">
+          <div className="card p-6 w-full max-w-2xl my-8">
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <h2 className="font-head text-xl font-bold">📊 ผลการแข่งขัน</h2>
+                <p className="text-sm text-gray-500 mt-0.5">{matchModal.tournamentName}</p>
+              </div>
+              <button onClick={() => setMatchModal(null)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
+            </div>
+
+            {matchesLoading ? (
+              <div className="text-center py-8 text-gray-400">กำลังโหลด...</div>
+            ) : matchData.length === 0 ? (
+              <div className="text-center py-8 text-gray-400">ยังไม่มีแมตช์ — กรุณาสร้าง Bracket ก่อน</div>
+            ) : (
+              <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-1">
+                {Object.values(
+                  matchData.reduce((acc, m) => {
+                    const key = `${m.bracket}-${m.round}`
+                    acc[key] = acc[key] || { bracket: m.bracket, round: m.round, items: [] }
+                    acc[key].items.push(m)
+                    return acc
+                  }, {})
+                ).sort((a, b) => a.bracket === b.bracket ? a.round - b.round : a.bracket.localeCompare(b.bracket))
+                 .map(group => (
+                  <div key={`${group.bracket}-${group.round}`}>
+                    <h3 className="text-xs font-bold text-gray-400 mb-2 uppercase tracking-widest">
+                      {group.bracket === 'GRAND_FINAL' ? '🏆 Grand Final' :
+                        group.bracket === 'LOWER' ? `Lower Bracket · รอบ ${group.round}` :
+                        `รอบที่ ${group.round}`}
+                    </h3>
+                    <div className="space-y-2">
+                      {group.items.map(m => {
+                        const isEditing = editingMatch?.id === m.id
+                        const aName = m.participantA?.name || 'TBD'
+                        const bName = m.participantB?.name || 'TBD'
+                        const canEdit = m.participantA || m.participantB
+                        const aWin = m.winnerId && m.winnerId === m.participantA?.id
+                        const bWin = m.winnerId && m.winnerId === m.participantB?.id
+                        return (
+                          <div key={m.id} className="border border-gray-200 rounded-lg overflow-hidden">
+                            <div className="flex items-stretch">
+                              <div className="flex-1 p-3">
+                                <div className={`flex justify-between items-center text-sm ${aWin ? 'text-emerald-700 font-bold' : 'text-gray-700'}`}>
+                                  <span>{aName}</span>
+                                  {m.status === 'FINISHED' && <span className="font-bold ml-2">{m.scoreA}</span>}
+                                </div>
+                                <div className="border-t border-gray-100 my-1.5" />
+                                <div className={`flex justify-between items-center text-sm ${bWin ? 'text-emerald-700 font-bold' : 'text-gray-700'}`}>
+                                  <span>{bName}</span>
+                                  {m.status === 'FINISHED' && <span className="font-bold ml-2">{m.scoreB}</span>}
+                                </div>
+                              </div>
+                              {canEdit && !isEditing && (
+                                <button
+                                  onClick={() => setEditingMatch({ id: m.id, scoreA: m.scoreA ?? 0, scoreB: m.scoreB ?? 0, winnerId: m.winnerId || '', participantA: m.participantA, participantB: m.participantB })}
+                                  className="text-xs text-blue-500 hover:text-blue-700 px-3 border-l border-gray-200 shrink-0"
+                                >
+                                  {m.status === 'FINISHED' ? 'แก้ไข' : 'บันทึกผล'}
+                                </button>
+                              )}
+                            </div>
+                            {isEditing && (
+                              <form onSubmit={handleSaveScore} className="border-t border-gray-200 bg-gray-50 p-3 space-y-3">
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div>
+                                    <label className="text-xs text-gray-500 block mb-1">{aName}</label>
+                                    <input type="number" min={0} className="input text-sm py-1" value={editingMatch.scoreA}
+                                      onChange={e => setEditingMatch(p => ({ ...p, scoreA: e.target.value }))} />
+                                  </div>
+                                  <div>
+                                    <label className="text-xs text-gray-500 block mb-1">{bName}</label>
+                                    <input type="number" min={0} className="input text-sm py-1" value={editingMatch.scoreB}
+                                      onChange={e => setEditingMatch(p => ({ ...p, scoreB: e.target.value }))} />
+                                  </div>
+                                </div>
+                                <div>
+                                  <label className="text-xs text-gray-500 block mb-1">ผู้ชนะ *</label>
+                                  <select className="input text-sm py-1" value={editingMatch.winnerId}
+                                    onChange={e => setEditingMatch(p => ({ ...p, winnerId: e.target.value }))} required>
+                                    <option value="">-- เลือกผู้ชนะ --</option>
+                                    {editingMatch.participantA && <option value={editingMatch.participantA.id}>{aName}</option>}
+                                    {editingMatch.participantB && <option value={editingMatch.participantB.id}>{bName}</option>}
+                                  </select>
+                                </div>
+                                <div className="flex gap-2">
+                                  <button type="submit" disabled={savingScore || !editingMatch.winnerId} className="btn-primary text-xs py-1 px-3">
+                                    {savingScore ? '...' : 'บันทึก'}
+                                  </button>
+                                  <button type="button" onClick={() => setEditingMatch(null)} className="btn-secondary text-xs py-1 px-3">ยกเลิก</button>
+                                </div>
+                              </form>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
                   </div>
                 ))}
               </div>

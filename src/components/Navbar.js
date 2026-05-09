@@ -69,10 +69,7 @@ export default function Navbar({ variant = 'default' }) {
                 <button onClick={handleLogout} className="btn-secondary text-sm">ออกจากระบบ</button>
               </>
             ) : (
-              <>
-                <Link href="/auth/login" className="btn-secondary text-sm">เข้าสู่ระบบ</Link>
-                <Link href="/auth/register" className="btn-primary text-sm">สมัครสมาชิก</Link>
-              </>
+              <Link href="/auth/login" className="btn-secondary text-sm">เข้าสู่ระบบ Admin</Link>
             ))}
           </div>
 
@@ -96,9 +93,8 @@ export default function Navbar({ variant = 'default' }) {
                   ออกจากระบบ (@{user.username})
                 </button>
               ) : (
-                <div className="flex gap-2 px-2">
-                  <Link href="/auth/login" className="btn-secondary text-sm flex-1 text-center">เข้าสู่ระบบ</Link>
-                  <Link href="/auth/register" className="btn-primary text-sm flex-1 text-center">สมัครสมาชิก</Link>
+                <div className="px-2">
+                  <Link href="/auth/login" className="btn-secondary text-sm w-full text-center">เข้าสู่ระบบ Admin</Link>
                 </div>
               ))}
             </div>

@@ -99,6 +99,18 @@ export default function AdminPage() {
     }
   }
 
+  async function handleDeleteTournament(tournamentId, name) {
+    if (!confirm(`ลบทัวร์ "${name}" ใช่ไหม?\n\nการกระทำนี้ไม่สามารถย้อนกลับได้`)) return
+    const res = await fetch(`/api/tournaments/${tournamentId}`, { method: 'DELETE' })
+    if (res.ok) {
+      setTournaments(prev => prev.filter(t => t.id !== tournamentId))
+      toast.show('ลบทัวร์เรียบร้อย', 'success')
+    } else {
+      const d = await res.json().catch(() => ({}))
+      toast.show(d.error || 'ลบไม่สำเร็จ', 'error')
+    }
+  }
+
   if (loading) return (
     <main className="min-h-screen bg-gray-50">
       <Navbar variant="admin" />
@@ -231,6 +243,7 @@ export default function AdminPage() {
                           {(t.status === 'CLOSED' || t.status === 'OPEN') && (
                             <button onClick={() => handleGenerateBracket(t.id)} className="btn-primary text-xs py-1 px-2">สร้าง Bracket</button>
                           )}
+                          <button onClick={() => handleDeleteTournament(t.id, t.name)} className="btn-danger text-xs py-1 px-2">ลบ</button>
                         </div>
                       </td>
                     </tr>

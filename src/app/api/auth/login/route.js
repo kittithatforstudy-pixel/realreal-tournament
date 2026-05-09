@@ -9,7 +9,11 @@ export async function POST(request) {
     const password = body.password || ''
     if (!email || !password) return NextResponse.json({ error: 'กรุณากรอก email และ password' }, { status: 400 })
 
-    const { data: user } = await supabase.from('User').select('*').ilike('email', email).maybeSingle()
+    const { data: user, error: dbError } = await supabase.from('User').select('*').ilike('email', email).maybeSingle()
+    if (dbError) {
+      console.error('Login DB error:', dbError)
+      return NextResponse.json({ error: 'ไม่สามารถเชื่อมต่อฐานข้อมูลได้ กรุณาติดต่อ admin' }, { status: 500 })
+    }
     if (!user) return NextResponse.json({ error: 'Email หรือ Password ไม่ถูกต้อง' }, { status: 401 })
 
     const valid = await verifyPassword(password, user.passwordHash)

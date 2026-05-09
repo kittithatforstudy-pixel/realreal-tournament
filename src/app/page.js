@@ -75,7 +75,7 @@ export default function HomePage() {
             <span className="bg-gradient-to-r from-amber-500 to-orange-500 bg-clip-text text-transparent">ที่จัดจริง · จัดประจำ</span>
           </h1>
           <p className="text-gray-600 text-base md:text-lg mb-8 max-w-2xl mx-auto">
-            เลือกทัวร์ที่คุณสนใจ สมัครทีมหรือเดี่ยว ลงแข่งจริง ลุ้นเงินรางวัล
+            ติดตาม bracket ผลการแข่งขัน และความเคลื่อนไหวของทุกทัวร์นาเมนต์ได้ที่นี่
           </p>
 
           {/* Search bar */}
@@ -121,7 +121,7 @@ export default function HomePage() {
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
           <div>
             <h2 className="font-head text-2xl md:text-3xl font-bold text-gray-900">🏆 ทัวร์นาเมนต์</h2>
-            <p className="text-gray-500 text-sm mt-1">เลือกทัวร์ที่คุณสนใจและสมัครได้เลย</p>
+            <p className="text-gray-500 text-sm mt-1">คลิกดู bracket และผลการแข่งขัน real-time</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <select
@@ -222,16 +222,13 @@ export default function HomePage() {
       {/* Features */}
       <section className="py-14 bg-white border-t border-cream-200">
         <div className="max-w-6xl mx-auto px-4">
-          <h2 className="font-head text-2xl md:text-3xl font-bold text-center mb-2">ทำไมต้องลงแข่งกับ RealReal?</h2>
-          <p className="text-gray-500 text-center mb-10">ทัวร์ที่จัดจริง โปร่งใส มีระบบรองรับครบ</p>
+          <h2 className="font-head text-2xl md:text-3xl font-bold text-center mb-2">ติดตามได้ครบทุกอย่าง</h2>
+          <p className="text-gray-500 text-center mb-10">ดูผลการแข่งขัน bracket และข้อมูลทัวร์แบบ real-time</p>
           <div className="grid md:grid-cols-3 gap-6">
             {[
-              { icon: '🎮', title: 'หลายเกมหลายแนว', desc: 'FPS, MOBA, BR, ไฟท์ติ้ง, กีฬา — มีให้เลือกแข่งหลากหลายเกม' },
-              { icon: '🏆', title: 'หลายฟอร์แมต', desc: 'Single/Double Elim, Round Robin, Swiss, Battle Royale, กลุ่ม+Playoff' },
-              { icon: '💰', title: 'จ่ายค่าสมัครสะดวก', desc: 'PromptPay QR, โอนธนาคาร, TrueWallet — แนบสลิปได้ทันที' },
-              { icon: '📊', title: 'Bracket แบบ Real-time', desc: 'ติดตามสาย ดูคู่แข่ง ผลแมตช์อัพเดททันทีทุกรอบ' },
-              { icon: '✅', title: 'Check-in ก่อนแข่ง', desc: 'ระบบ check-in ป้องกันคนหาย ลดดราม่า แข่งตรงเวลา' },
-              { icon: '🤖', title: 'แจ้งเตือนผ่าน Discord', desc: 'อัพเดทตารางแข่ง ผลแมตช์ และประกาศต่าง ๆ ทาง Discord' }
+              { icon: '🎮', title: 'หลายเกมหลายแนว', desc: 'FPS, MOBA, BR, ไฟท์ติ้ง, กีฬา — ครอบคลุมทุกประเภทเกม' },
+              { icon: '📊', title: 'Bracket Real-time', desc: 'ติดตามสาย ดูคู่แข่ง ผลแมตช์อัพเดทตลอดการแข่ง' },
+              { icon: '🤖', title: 'แจ้งเตือนผ่าน Discord', desc: 'อัพเดทตารางแข่ง ผลแมตช์ และประกาศต่าง ๆ ทาง Discord อัตโนมัติ' },
             ].map((f, i) => (
               <div key={i} className="card p-6 hover:shadow-md transition-shadow">
                 <div className="text-3xl mb-3">{f.icon}</div>
@@ -239,18 +236,6 @@ export default function HomePage() {
                 <p className="text-gray-500 text-sm">{f.desc}</p>
               </div>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="py-14 bg-gradient-to-br from-amber-50 to-cream-100 border-t border-cream-200">
-        <div className="max-w-3xl mx-auto px-4 text-center">
-          <h2 className="font-head text-2xl md:text-3xl font-bold text-gray-900 mb-3">พร้อมลงสนามแล้วหรือยัง?</h2>
-          <p className="text-gray-600 mb-6">สมัครสมาชิกฟรี เลือกทัวร์ที่ใช่ ลงแข่งได้เลย</p>
-          <div className="flex flex-col sm:flex-row justify-center gap-3">
-            <Link href="/auth/register" className="btn-primary px-8 py-3">สมัครสมาชิก</Link>
-            <Link href="/tournaments" className="btn-secondary px-8 py-3">เลือกทัวร์ที่จะแข่ง</Link>
           </div>
         </div>
       </section>

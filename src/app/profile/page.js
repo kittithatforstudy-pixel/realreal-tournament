@@ -7,18 +7,6 @@ import { useToast } from '@/components/Toast'
 import { SkeletonBlock } from '@/components/Skeleton'
 import ImageUpload from '@/components/ImageUpload'
 
-const REG_STATUS = {
-  PENDING: { label: 'รอยืนยัน', cls: 'bg-yellow-100 text-yellow-700' },
-  CONFIRMED: { label: 'ยืนยันแล้ว', cls: 'bg-green-100 text-green-700' },
-  CANCELLED: { label: 'ยกเลิก', cls: 'bg-gray-100 text-gray-600' },
-  DQ: { label: 'ถูก DQ', cls: 'bg-red-100 text-red-700' },
-}
-
-const PAYMENT_STATUS = {
-  PENDING: { label: 'รอ Approve', cls: 'bg-yellow-100 text-yellow-700' },
-  APPROVED: { label: 'ผ่าน', cls: 'bg-green-100 text-green-700' },
-  REJECTED: { label: 'ไม่ผ่าน', cls: 'bg-red-100 text-red-700' },
-}
 
 export default function ProfilePage() {
   const toast = useToast()
@@ -94,17 +82,12 @@ export default function ProfilePage() {
 
       <div className="max-w-3xl mx-auto px-4 py-12">
         {!authed && (
-          <>
-            <div className="card p-8 text-center">
-              <div className="text-6xl mb-4">👤</div>
-              <h1 className="font-head text-2xl font-bold text-gray-900 mb-2">โปรไฟล์</h1>
-              <p className="text-gray-500 mb-6">กรุณาเข้าสู่ระบบเพื่อดูโปรไฟล์และประวัติการสมัคร</p>
-              <div className="flex justify-center gap-3">
-                <Link href="/auth/login" className="btn-primary px-8">เข้าสู่ระบบ</Link>
-                <Link href="/auth/register" className="btn-secondary px-8">สมัครสมาชิก</Link>
-              </div>
-            </div>
-          </>
+          <div className="card p-8 text-center">
+            <div className="text-6xl mb-4">👤</div>
+            <h1 className="font-head text-2xl font-bold text-gray-900 mb-2">โปรไฟล์</h1>
+            <p className="text-gray-500 mb-6">กรุณาเข้าสู่ระบบ Admin เพื่อดูโปรไฟล์</p>
+            <Link href="/auth/login" className="btn-primary px-8">เข้าสู่ระบบ Admin</Link>
+          </div>
         )}
 
         {authed && data && (
@@ -135,57 +118,9 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            <div className="card p-6 mb-6">
-              <h2 className="font-head font-bold text-lg mb-4">ทัวร์ที่สมัคร ({data.registrations.length})</h2>
-              {data.registrations.length === 0 ? (
-                <p className="text-gray-400 text-sm">ยังไม่ได้สมัครทัวร์ใด <Link href="/tournaments" className="text-blue-500 hover:underline">ดูทัวร์ทั้งหมด</Link></p>
-              ) : (
-                <div className="space-y-3">
-                  {data.registrations.map(r => {
-                    const s = REG_STATUS[r.status] || { label: r.status, cls: 'bg-gray-100 text-gray-600' }
-                    const lastPayment = (r.payments || []).slice().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0]
-                    const ps = lastPayment ? PAYMENT_STATUS[lastPayment.status] : null
-                    return (
-                      <div key={r.id} className="border border-gray-100 rounded-lg p-4 flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <Link href={`/tournaments/${r.tournament?.id}`} className="font-semibold text-gray-900 hover:text-blue-600">
-                            {r.tournament?.game?.icon} {r.tournament?.name || 'Unknown'}
-                          </Link>
-                          {r.team && <div className="text-xs text-gray-500 mt-0.5">ทีม: {r.team.name} · code: {r.team.inviteCode}</div>}
-                          {r.tournament?.startsAt && (
-                            <div className="text-xs text-gray-500 mt-0.5">วันแข่ง: {new Date(r.tournament.startsAt).toLocaleDateString('th-TH')}</div>
-                          )}
-                          {lastPayment && (
-                            <div className="text-xs text-gray-500 mt-1">
-                              ชำระ: ฿{lastPayment.amount?.toLocaleString?.() ?? lastPayment.amount} ·
-                              <span className={`badge ml-1 ${ps?.cls || 'bg-gray-100 text-gray-600'}`}>{ps?.label || lastPayment.status}</span>
-                            </div>
-                          )}
-                        </div>
-                        <span className={`badge ${s.cls} shrink-0`}>{s.label}</span>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
+            <div className="card p-5">
+              <p className="text-sm text-gray-500">บัญชี Admin · <Link href="/admin" className="text-blue-500 hover:underline">ไปหน้า Admin Dashboard</Link></p>
             </div>
-
-            {data.teamMemberships.length > 0 && (
-              <div className="card p-6">
-                <h2 className="font-head font-bold text-lg mb-4">ทีมของฉัน ({data.teamMemberships.length})</h2>
-                <div className="space-y-2">
-                  {data.teamMemberships.map(m => (
-                    <div key={m.id} className="flex items-center justify-between border-b border-gray-100 pb-2 last:border-0">
-                      <div>
-                        <div className="font-medium text-gray-900">{m.team?.name}</div>
-                        <div className="text-xs text-gray-500">บทบาท: {m.role} · code: {m.team?.inviteCode}</div>
-                      </div>
-                      <Link href={`/tournaments/${m.team?.tournamentId}`} className="text-sm text-blue-500 hover:underline">ดูทัวร์</Link>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </>
         )}
       </div>

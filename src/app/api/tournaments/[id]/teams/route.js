@@ -17,7 +17,8 @@ export async function POST(request, { params }) {
   try {
     const admin = await requireAdmin()
     const { id } = await params
-    const { name } = await request.json()
+    const body = await request.json()
+    const { name } = body
     if (!name?.trim()) return NextResponse.json({ error: 'กรุณากรอกชื่อทีม' }, { status: 400 })
 
     const { data: tournament } = await supabase.from('Tournament').select('id, teamMode, maxParticipants').eq('id', id).single()

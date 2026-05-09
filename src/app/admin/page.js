@@ -20,18 +20,33 @@ export default function AdminPage() {
   const [createForm, setCreateForm] = useState({ name: '', gameName: '', banner: '', format: 'SINGLE_ELIM', maxParticipants: 16, entryFee: 0, teamMode: true, teamSize: 5 })
   const [createMsg, setCreateMsg] = useState('')
 
+  // Platform settings
+  const [settings, setSettings] = useState({ discordServerLink: '', registrationFormUrl: '' })
+  const [settingsSaving, setSettingsSaving] = useState(false)
+
+  // Team management modal
+  const [teamModal, setTeamModal] = useState(null) // { tournamentId, tournamentName, maxParticipants }
+  const [teams, setTeams] = useState([])
+  const [teamsLoading, setTeamsLoading] = useState(false)
+  const [newTeamName, setNewTeamName] = useState('')
+  const [addingTeam, setAddingTeam] = useState(false)
+  const [editingTeam, setEditingTeam] = useState(null) // { id, name }
+  const [editTeamName, setEditTeamName] = useState('')
+
   useEffect(() => {
     Promise.all([
       fetch('/api/tournaments?all=1').then(r => r.json()),
       fetch('/api/payments/pending').then(r => r.json()),
       fetch('/api/games').then(r => r.json()),
-    ]).then(([t, p, g]) => {
+      fetch('/api/platform-settings').then(r => r.ok ? r.json() : {}),
+    ]).then(([t, p, g, s]) => {
       if (!Array.isArray(p)) {
         setError('ไม่สามารถโหลดข้อมูลได้ กรุณาเข้าสู่ระบบด้วยบัญชี Admin')
       }
       setTournaments(Array.isArray(t) ? t : [])
       setPayments(Array.isArray(p) ? p : [])
       setGames(Array.isArray(g) ? g : [])
+      setSettings({ discordServerLink: s?.discordServerLink || '', registrationFormUrl: s?.registrationFormUrl || '' })
       setLoading(false)
     }).catch(() => {
       setError('ไม่สามารถโหลดข้อมูลได้ กรุณาเข้าสู่ระบบด้วยบัญชี Admin')
@@ -99,6 +114,84 @@ export default function AdminPage() {
     }
   }
 
+  async function handleSaveSettings(e) {
+    e.preventDefault()
+    setSettingsSaving(true)
+    const res = await fetch('/api/platform-settings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(settings)
+    })
+    if (res.ok) {
+      toast.show('บันทึกการตั้งค่าแล้ว', 'success')
+    } else {
+      const d = await res.json().catch(() => ({}))
+      toast.show(d.error || 'บันทึกไม่สำเร็จ', 'error')
+    }
+    setSettingsSaving(false)
+  }
+
+  function openTeamModal(tournament) {
+    setTeamModal({ tournamentId: tournament.id, tournamentName: tournament.name, maxParticipants: tournament.maxParticipants })
+    setNewTeamName('')
+    setEditingTeam(null)
+    setTeamsLoading(true)
+    fetch(`/api/tournaments/${tournament.id}/teams`)
+      .then(r => r.json())
+      .then(d => { setTeams(Array.isArray(d) ? d : []); setTeamsLoading(false) })
+      .catch(() => setTeamsLoading(false))
+  }
+
+  async function handleAddTeam(e) {
+    e.preventDefault()
+    if (!newTeamName.trim()) return
+    setAddingTeam(true)
+    const res = await fetch(`/api/tournaments/${teamModal.tournamentId}/teams`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: newTeamName.trim() })
+    })
+    const data = await res.json()
+    if (res.ok) {
+      setTeams(prev => [...prev, data])
+      setNewTeamName('')
+      toast.show('เพิ่มทีมแล้ว', 'success')
+    } else {
+      toast.show(data.error || 'เพิ่มทีมไม่สำเร็จ', 'error')
+    }
+    setAddingTeam(false)
+  }
+
+  async function handleRenameTeam(e) {
+    e.preventDefault()
+    if (!editTeamName.trim()) return
+    const res = await fetch(`/api/tournaments/${teamModal.tournamentId}/teams/${editingTeam.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: editTeamName.trim() })
+    })
+    const data = await res.json()
+    if (res.ok) {
+      setTeams(prev => prev.map(t => t.id === editingTeam.id ? { ...t, name: data.name } : t))
+      setEditingTeam(null)
+      toast.show('แก้ไขชื่อแล้ว', 'success')
+    } else {
+      toast.show(data.error || 'แก้ไขชื่อไม่สำเร็จ', 'error')
+    }
+  }
+
+  async function handleDeleteTeam(teamId, teamName) {
+    if (!confirm(`ลบทีม "${teamName}" ออกจากทัวร์นี้?`)) return
+    const res = await fetch(`/api/tournaments/${teamModal.tournamentId}/teams/${teamId}`, { method: 'DELETE' })
+    if (res.ok) {
+      setTeams(prev => prev.filter(t => t.id !== teamId))
+      toast.show('ลบทีมแล้ว', 'success')
+    } else {
+      const d = await res.json().catch(() => ({}))
+      toast.show(d.error || 'ลบทีมไม่สำเร็จ', 'error')
+    }
+  }
+
   async function handleDeleteTournament(tournamentId, name) {
     if (!confirm(`ลบทัวร์ "${name}" ใช่ไหม?\n\nการกระทำนี้ไม่สามารถย้อนกลับได้`)) return
     const res = await fetch(`/api/tournaments/${tournamentId}`, { method: 'DELETE' })
@@ -139,6 +232,7 @@ export default function AdminPage() {
               { key: 'tournaments', label: '🏆 ทัวร์นาเมนต์' },
               { key: 'payments', label: `💰 สลิปรอ Approve${payments.length > 0 ? ` (${payments.length})` : ''}` },
               { key: 'games', label: '🎮 เกม' },
+              { key: 'settings', label: '⚙️ ตั้งค่า' },
             ].map(t => (
               <button
                 key={t.key}
@@ -240,6 +334,7 @@ export default function AdminPage() {
                       <td className="px-4 py-3 text-right">
                         <div className="flex justify-end gap-2">
                           <Link href={`/tournaments/${t.id}`} className="btn-secondary text-xs py-1 px-2">ดู</Link>
+                          <button onClick={() => openTeamModal(t)} className="btn-secondary text-xs py-1 px-2">👥 ทีม</button>
                           {(t.status === 'CLOSED' || t.status === 'OPEN') && (
                             <button onClick={() => handleGenerateBracket(t.id)} className="btn-primary text-xs py-1 px-2">สร้าง Bracket</button>
                           )}
@@ -292,6 +387,43 @@ export default function AdminPage() {
           </div>
         )}
 
+        {/* SETTINGS */}
+        {tab === 'settings' && (
+          <div className="max-w-lg">
+            <h1 className="font-head text-2xl font-bold mb-6">ตั้งค่าเว็บไซต์</h1>
+            <form onSubmit={handleSaveSettings} className="card p-6 space-y-5">
+              <div>
+                <label className="label">ลิงก์ Discord Server</label>
+                <input
+                  type="url"
+                  className="input"
+                  placeholder="https://discord.gg/..."
+                  value={settings.discordServerLink}
+                  onChange={e => setSettings(s => ({ ...s, discordServerLink: e.target.value }))}
+                />
+                <p className="text-xs text-gray-400 mt-1">จะแสดงเป็นปุ่ม "เข้า Discord Server" ในหน้า Login</p>
+              </div>
+              <div>
+                <label className="label">ลิงก์ฟอร์มสมัครทัวร์</label>
+                <input
+                  type="url"
+                  className="input"
+                  placeholder="https://forms.gle/... หรือ bit.ly/..."
+                  value={settings.registrationFormUrl}
+                  onChange={e => setSettings(s => ({ ...s, registrationFormUrl: e.target.value }))}
+                />
+                <p className="text-xs text-gray-400 mt-1">จะแสดงเป็นปุ่ม "ฟอร์มสมัครทัวร์" ในหน้า Login</p>
+              </div>
+              <div className="pt-2">
+                <button type="submit" className="btn-primary w-full" disabled={settingsSaving}>
+                  {settingsSaving ? 'กำลังบันทึก...' : 'บันทึกการตั้งค่า'}
+                </button>
+              </div>
+              <p className="text-xs text-gray-400">ปล่อยว่างไว้ถ้าไม่ต้องการแสดงปุ่มนั้น</p>
+            </form>
+          </div>
+        )}
+
         {/* GAMES */}
         {tab === 'games' && (
           <div>
@@ -310,6 +442,76 @@ export default function AdminPage() {
           </div>
         )}
       </div>
+
+      {/* Team Management Modal */}
+      {teamModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4 overflow-y-auto">
+          <div className="card p-6 w-full max-w-lg my-8">
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <h2 className="font-head text-xl font-bold">👥 จัดการทีม</h2>
+                <p className="text-sm text-gray-500 mt-0.5">{teamModal.tournamentName} · {teams.length}/{teamModal.maxParticipants} ทีม</p>
+              </div>
+              <button onClick={() => setTeamModal(null)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
+            </div>
+
+            {/* Add team form */}
+            <form onSubmit={handleAddTeam} className="flex gap-2 mb-4">
+              <input
+                type="text"
+                className="input flex-1"
+                placeholder="ชื่อทีมใหม่..."
+                value={newTeamName}
+                onChange={e => setNewTeamName(e.target.value)}
+                disabled={addingTeam}
+              />
+              <button type="submit" className="btn-primary px-4" disabled={addingTeam || !newTeamName.trim()}>
+                {addingTeam ? '...' : '+ เพิ่ม'}
+              </button>
+            </form>
+
+            {/* Teams list */}
+            {teamsLoading ? (
+              <div className="text-center py-8 text-gray-400 text-sm">กำลังโหลด...</div>
+            ) : teams.length === 0 ? (
+              <div className="text-center py-8 text-gray-400 text-sm">ยังไม่มีทีม</div>
+            ) : (
+              <div className="space-y-2 max-h-80 overflow-y-auto">
+                {teams.map((t, i) => (
+                  <div key={t.id} className="flex items-center gap-2 border border-gray-100 rounded-lg px-3 py-2">
+                    <span className="text-xs text-gray-400 w-5 text-right shrink-0">{i + 1}</span>
+                    {editingTeam?.id === t.id ? (
+                      <form onSubmit={handleRenameTeam} className="flex gap-2 flex-1">
+                        <input
+                          autoFocus
+                          type="text"
+                          className="input text-sm py-1 flex-1"
+                          value={editTeamName}
+                          onChange={e => setEditTeamName(e.target.value)}
+                        />
+                        <button type="submit" className="btn-primary text-xs py-1 px-2">บันทึก</button>
+                        <button type="button" onClick={() => setEditingTeam(null)} className="btn-secondary text-xs py-1 px-2">ยกเลิก</button>
+                      </form>
+                    ) : (
+                      <>
+                        <span className="flex-1 font-medium text-sm text-gray-800">{t.name}</span>
+                        <button
+                          onClick={() => { setEditingTeam(t); setEditTeamName(t.name) }}
+                          className="text-xs text-blue-500 hover:text-blue-700 px-2 py-1"
+                        >แก้ไข</button>
+                        <button
+                          onClick={() => handleDeleteTeam(t.id, t.name)}
+                          className="text-xs text-red-500 hover:text-red-700 px-2 py-1"
+                        >ลบ</button>
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Create Tournament Modal */}
       {showCreate && (

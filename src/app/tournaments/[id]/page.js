@@ -23,6 +23,53 @@ const FORMAT_LABEL = {
   GROUP_PLAYOFF: 'Group + Playoff',
 }
 
+function MatchCard({ m }) {
+  const aWin = m.winnerId && m.winnerId === m.participantA?.id
+  const bWin = m.winnerId && m.winnerId === m.participantB?.id
+  const finished = m.status === 'FINISHED'
+  return (
+    <div className="border border-gray-200 rounded-lg overflow-hidden shadow-sm bg-white text-sm w-full">
+      <div className="px-2.5 py-1 bg-gray-50 border-b border-gray-100 text-[10px] text-gray-400 font-semibold tracking-wider">
+        #{m.matchNumber}
+      </div>
+      <div className={`flex items-center justify-between px-3 py-2 ${aWin ? 'bg-emerald-50' : ''}`}>
+        <span className={`truncate flex-1 ${aWin ? 'text-emerald-700 font-bold' : m.participantA ? 'text-gray-800 font-medium' : 'text-gray-300 italic'}`}>
+          {m.participantA?.name || 'TBD'}
+        </span>
+        <span className={`font-bold tabular-nums ml-2 shrink-0 ${aWin ? 'text-emerald-600' : finished ? 'text-gray-400' : 'text-gray-300'}`}>
+          {finished ? m.scoreA : '-'}
+        </span>
+      </div>
+      <div className="border-t border-gray-100" />
+      <div className={`flex items-center justify-between px-3 py-2 ${bWin ? 'bg-emerald-50' : ''}`}>
+        <span className={`truncate flex-1 ${bWin ? 'text-emerald-700 font-bold' : m.participantB ? 'text-gray-800 font-medium' : 'text-gray-300 italic'}`}>
+          {m.participantB?.name || 'TBD'}
+        </span>
+        <span className={`font-bold tabular-nums ml-2 shrink-0 ${bWin ? 'text-emerald-600' : finished ? 'text-gray-400' : 'text-gray-300'}`}>
+          {finished ? m.scoreB : '-'}
+        </span>
+      </div>
+    </div>
+  )
+}
+
+function BracketColumns({ rounds, lastLabel }) {
+  return (
+    <div className="overflow-x-auto -mx-6 px-6 pb-3">
+      <div className="flex gap-5 items-stretch min-w-max">
+        {rounds.map((round, idx) => (
+          <div key={round.round} className="flex flex-col justify-around gap-4 w-56 shrink-0">
+            <div className="text-[11px] font-bold text-gray-500 uppercase tracking-widest text-center pb-2 border-b border-gray-200">
+              {idx === rounds.length - 1 && lastLabel ? lastLabel : `รอบที่ ${round.round}`}
+            </div>
+            {round.items.map(m => <MatchCard key={m.id} m={m} />)}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function TournamentDetailPage() {
   const { id } = useParams()
   const [tournament, setTournament] = useState(null)
@@ -64,15 +111,24 @@ export default function TournamentDetailPage() {
   const s = STATUS_LABEL[tournament.status] || { label: tournament.status, cls: 'badge-closed' }
   const totalParticipants = tournament._count?.teams ?? tournament._count?.registrations ?? 0
 
-  const matchesByRound = (tournament.matches || []).reduce((acc, m) => {
-    const key = `${m.bracket}-${m.round}`
-    acc[key] = acc[key] || { bracket: m.bracket, round: m.round, items: [] }
-    acc[key].items.push(m)
-    return acc
-  }, {})
-  const roundGroups = Object.values(matchesByRound).sort((a, b) =>
-    a.bracket === b.bracket ? a.round - b.round : a.bracket.localeCompare(b.bracket)
-  )
+  const matches = tournament.matches || []
+  const groupByRound = (arr) => {
+    const groups = {}
+    arr.forEach(m => {
+      groups[m.round] = groups[m.round] || []
+      groups[m.round].push(m)
+    })
+    return Object.entries(groups)
+      .map(([round, items]) => ({ round: +round, items: items.sort((a, b) => a.matchNumber - b.matchNumber) }))
+      .sort((a, b) => a.round - b.round)
+  }
+  const upperRounds = groupByRound(matches.filter(m => m.bracket === 'UPPER'))
+  const lowerRounds = groupByRound(matches.filter(m => m.bracket === 'LOWER'))
+  const grandFinalRounds = groupByRound(matches.filter(m => m.bracket === 'GRAND_FINAL'))
+  const hasLower = lowerRounds.length > 0
+  const hasMatches = matches.length > 0
+  // For single elim, append GF as the last column of the upper bracket
+  const upperWithFinal = !hasLower ? [...upperRounds, ...grandFinalRounds] : upperRounds
 
   return (
     <main className="min-h-screen bg-gray-50">
@@ -121,49 +177,47 @@ export default function TournamentDetailPage() {
         <div className="grid md:grid-cols-3 gap-6">
           <div className="md:col-span-2 space-y-6">
 
-            {/* Bracket — แสดงขึ้นมาก่อนเลย */}
-            {roundGroups.length > 0 ? (
+            {/* Bracket */}
+            {hasMatches ? (
               <div className="card p-6">
-                <h2 className="font-head font-bold text-lg mb-4">🏆 Bracket / ผลการแข่งขัน</h2>
-                <div className="space-y-6">
-                  {roundGroups.map(group => (
-                    <div key={`${group.bracket}-${group.round}`}>
-                      <h3 className="text-xs font-bold text-gray-400 mb-3 uppercase tracking-widest">
-                        {group.bracket === 'GRAND_FINAL' ? '🏆 Grand Final' :
-                          group.bracket === 'LOWER' ? `Lower Bracket · รอบ ${group.round}` :
-                          `รอบที่ ${group.round}`}
-                      </h3>
-                      <div className="grid sm:grid-cols-2 gap-3">
-                        {group.items.map(m => {
-                          const aWin = m.winnerId && m.winnerId === m.participantA?.id
-                          const bWin = m.winnerId && m.winnerId === m.participantB?.id
-                          const finished = m.status === 'FINISHED'
-                          return (
-                            <div key={m.id} className="border border-gray-200 rounded-xl overflow-hidden shadow-sm text-sm">
-                              <div className={`flex items-center justify-between px-4 py-2.5 ${aWin ? 'bg-emerald-50' : 'bg-white'}`}>
-                                <span className={`font-semibold ${aWin ? 'text-emerald-700' : 'text-gray-700'}`}>
-                                  {m.participantA?.name || <span className="text-gray-400 italic">TBD</span>}
-                                </span>
-                                {finished && (
-                                  <span className={`font-bold text-base ${aWin ? 'text-emerald-600' : 'text-gray-400'}`}>{m.scoreA}</span>
-                                )}
-                              </div>
-                              <div className="border-t border-gray-200" />
-                              <div className={`flex items-center justify-between px-4 py-2.5 ${bWin ? 'bg-emerald-50' : 'bg-white'}`}>
-                                <span className={`font-semibold ${bWin ? 'text-emerald-700' : 'text-gray-700'}`}>
-                                  {m.participantB?.name || <span className="text-gray-400 italic">TBD</span>}
-                                </span>
-                                {finished && (
-                                  <span className={`font-bold text-base ${bWin ? 'text-emerald-600' : 'text-gray-400'}`}>{m.scoreB}</span>
-                                )}
-                              </div>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <h2 className="font-head font-bold text-lg mb-5">🏆 Bracket / ผลการแข่งขัน</h2>
+
+                {hasLower && (
+                  <h3 className="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
+                    <span className="inline-block w-1 h-4 bg-blue-500 rounded-full" />
+                    Upper Bracket
+                  </h3>
+                )}
+                {upperWithFinal.length > 0 && (
+                  <BracketColumns
+                    rounds={upperWithFinal}
+                    lastLabel={!hasLower && grandFinalRounds.length > 0 ? '🏆 รอบชิงชนะเลิศ' : null}
+                  />
+                )}
+
+                {hasLower && (
+                  <>
+                    <h3 className="text-sm font-bold text-gray-700 mb-3 mt-8 flex items-center gap-2">
+                      <span className="inline-block w-1 h-4 bg-amber-500 rounded-full" />
+                      Lower Bracket
+                    </h3>
+                    <BracketColumns rounds={lowerRounds} />
+
+                    {grandFinalRounds.length > 0 && (
+                      <>
+                        <h3 className="text-sm font-bold text-gray-700 mb-3 mt-8 flex items-center gap-2">
+                          <span className="inline-block w-1 h-4 bg-emerald-500 rounded-full" />
+                          🏆 Grand Final
+                        </h3>
+                        <div className="max-w-xs">
+                          {grandFinalRounds.flatMap(r => r.items).map(m => (
+                            <MatchCard key={m.id} m={m} />
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </>
+                )}
               </div>
             ) : (
               tournament.status === 'LIVE' || tournament.status === 'CLOSED' ? (

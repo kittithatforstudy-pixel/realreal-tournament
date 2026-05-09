@@ -7,16 +7,11 @@ export async function GET(request, { params }) {
   try {
     const { id } = await params
 
-    const [{ data: tournament }, { data: teams }, { data: registrations }, { data: matches }] = await Promise.all([
+    const [{ data: tournament }, { data: teams }, { data: registrations }, { data: rawMatches }] = await Promise.all([
       supabase.from('Tournament').select('*, game:Game(*)').eq('id', id).single(),
       supabase.from('Team').select('*, members:TeamMember(*, user:User(id, username, displayName))').eq('tournamentId', id),
       supabase.from('Registration').select('*, user:User(id, username, displayName), payments:Payment(*)').eq('tournamentId', id),
-      supabase
-        .from('Match')
-        .select('*, participantA:Team!participantAId(id, name), participantB:Team!participantBId(id, name), winner:Team!winnerId(id, name)')
-        .eq('tournamentId', id)
-        .order('round')
-        .order('matchNumber')
+      supabase.from('Match').select('*').eq('tournamentId', id).order('round').order('matchNumber')
     ])
 
     if (!tournament) return NextResponse.json({ error: 'ไม่พบทัวร์นาเมนต์' }, { status: 404 })
@@ -27,11 +22,29 @@ export async function GET(request, { params }) {
       return { ...team, leader }
     }))
 
+    // Manually join team names onto matches (avoids PostgREST FK join issues)
+    const allTeamIds = [...new Set([
+      ...(rawMatches || []).map(m => m.participantAId).filter(Boolean),
+      ...(rawMatches || []).map(m => m.participantBId).filter(Boolean),
+      ...(rawMatches || []).map(m => m.winnerId).filter(Boolean),
+    ])]
+    let teamsMap = {}
+    if (allTeamIds.length > 0) {
+      const { data: matchTeams } = await supabase.from('Team').select('id, name').in('id', allTeamIds)
+      teamsMap = Object.fromEntries((matchTeams || []).map(t => [t.id, t]))
+    }
+    const matches = (rawMatches || []).map(m => ({
+      ...m,
+      participantA: m.participantAId ? (teamsMap[m.participantAId] || null) : null,
+      participantB: m.participantBId ? (teamsMap[m.participantBId] || null) : null,
+      winner: m.winnerId ? (teamsMap[m.winnerId] || null) : null,
+    }))
+
     return NextResponse.json({
       ...tournament,
       teams: teamsWithLeaders,
       registrations: registrations || [],
-      matches: matches || [],
+      matches,
       _count: { registrations: (registrations || []).length, teams: (teams || []).length }
     })
   } catch (error) {

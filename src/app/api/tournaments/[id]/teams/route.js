@@ -30,19 +30,18 @@ export async function POST(request, { params }) {
     }
 
     // Create Team
+    const teamId = crypto.randomUUID()
     const { data: team, error: teamError } = await supabase
       .from('Team')
-      .insert({ name: name.trim(), tournamentId: id, leaderId: admin.userId })
+      .insert({ id: teamId, name: name.trim(), tournamentId: id, leaderId: admin.userId, inviteCode: crypto.randomUUID() })
       .select('id, name, createdAt')
       .single()
     if (teamError) throw teamError
 
     // Create Registration (CONFIRMED) so the team is eligible for bracket
-    const { data: reg, error: regError } = await supabase
+    const { error: regError } = await supabase
       .from('Registration')
-      .insert({ tournamentId: id, userId: admin.userId, teamId: team.id, status: 'CONFIRMED' })
-      .select('id')
-      .single()
+      .insert({ id: crypto.randomUUID(), tournamentId: id, userId: admin.userId, teamId: team.id, status: 'CONFIRMED' })
     if (regError) {
       await supabase.from('Team').delete().eq('id', team.id)
       throw regError
